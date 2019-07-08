@@ -2,36 +2,43 @@
 apiVersion: apps/v1
 kind: Deployment
 spec:
-  replicas: 1
   selector:
     matchLabels:
-      networkservicemesh.io/app: "icmp-responder"
-      networkservicemesh.io/impl: "vppagent-endpoint"
+      networkservicemesh.io/app: "vl3-nse"
+  replicas: 3
   template:
     metadata:
       labels:
-        networkservicemesh.io/app: "icmp-responder"
-        networkservicemesh.io/impl: "vppagent-endpoint"
+        networkservicemesh.io/app: "vl3-nse"
+        networkservicemesh.io/impl: "vl3-service"
     spec:
       containers:
-        - name: vppagent-endpoint
-          image: networkservicemesh/vpp-icmp-vppagent-endpoint:latest
+        - name: vl3-nse
+          image: networkservicemesh/vl3_basic-vl3-nse:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: ADVERTISE_NSE_NAME
-              value: "icmp-responder"
+              value: "vl3-service"
             - name: ADVERTISE_NSE_LABELS
-              value: "app=vppagent-endpoint"
+              value: "app=vl3-nse"
             - name: TRACER_ENABLED
               value: "true"
             - name: IP_ADDRESS
-              value: "10.60.1.0/24"
+              value: "100.100.1.0/24"
             - name: JAEGER_SERVICE_HOST
               value: jaeger.nsm-system
             - name: JAEGER_SERVICE_PORT_JAEGER
               value: "6831"
+            - name: NSREGISTRY_ADDR
+              value: "192.150.40.8"
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+            privileged: true
           resources:
             limits:
               networkservicemesh.io/socket: 1
 metadata:
-  name: vppagent-endpoint
+  name: vl3-nse
+  namespace: default
