@@ -18,7 +18,7 @@ import (
 
 const (
 	NSREGISTRY_ADDR  = "nsmgr.nsm-system"
-	NSREGISTRY_PORT = "5001"
+	NSREGISTRY_PORT = "5000"
 )
 
 type vL3ConnectComposite struct {
@@ -100,7 +100,9 @@ func newVL3ConnectComposite(configuration *common.NSConfiguration) *vL3ConnectCo
 		logrus.Errorf("nsmConnection Error: %v", err)
 		return nil
 	}
+	logrus.Infof("newVL3ConnectComposite socket operation ok... create networkDiscoveryClient")
 	nsDiscoveryClient := registry.NewNetworkServiceDiscoveryClient(nsRegGrpcClient)
+	logrus.Infof("newVL3ConnectComposite networkDiscoveryClient ok")
 
 	newVL3ConnectComposite := &vL3ConnectComposite{
 		vl3NsePeers: make(map[string]string),
