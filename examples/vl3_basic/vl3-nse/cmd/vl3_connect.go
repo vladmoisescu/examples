@@ -75,6 +75,11 @@ func (vxc *vL3ConnectComposite) Close(ctx context.Context, conn *connection.Conn
 	return &empty.Empty{}, nil
 }
 
+// Name returns the composite name
+func (vxc *vL3ConnectComposite) Name() string {
+	return "vL3 NSE"
+}
+
 // NewVppAgentComposite creates a new VPP Agent composite
 func newVL3ConnectComposite(configuration *common.NSConfiguration) *vL3ConnectComposite {
 	nsRegAddr, ok := os.LookupEnv("NSREGISTRY_ADDR")
@@ -94,21 +99,25 @@ func newVL3ConnectComposite(configuration *common.NSConfiguration) *vL3ConnectCo
 
 	logrus.Infof("newVL3ConnectComposite")
 
+	var nsDiscoveryClient registry.NetworkServiceDiscoveryClient
+
 	regPort, _ := strconv.Atoi(nsRegPort)
 	nsRegGrpcClient, err := tools.SocketOperationCheck(&net.TCPAddr{IP: net.ParseIP(nsRegAddr), Port: regPort})
 	if err != nil {
-		logrus.Errorf("nsmConnection Error: %v", err)
-		return nil
+		logrus.Errorf("nsmConnection GRPC Client Socket Error: %v", err)
+		//return nil
+	} else {
+		logrus.Infof("newVL3ConnectComposite socket operation ok... create networkDiscoveryClient")
+		nsDiscoveryClient = registry.NewNetworkServiceDiscoveryClient(nsRegGrpcClient)
+		logrus.Infof("newVL3ConnectComposite networkDiscoveryClient ok")
 	}
-	logrus.Infof("newVL3ConnectComposite socket operation ok... create networkDiscoveryClient")
-	nsDiscoveryClient := registry.NewNetworkServiceDiscoveryClient(nsRegGrpcClient)
-	logrus.Infof("newVL3ConnectComposite networkDiscoveryClient ok")
-
 	newVL3ConnectComposite := &vL3ConnectComposite{
 		vl3NsePeers: make(map[string]string),
 		nsRegGrpcClient: nsRegGrpcClient,
 		nsDiscoveryClient: nsDiscoveryClient,
 	}
+
+	logrus.Infof("newVL3ConnectComposite returning")
 
 	return newVL3ConnectComposite
 }
