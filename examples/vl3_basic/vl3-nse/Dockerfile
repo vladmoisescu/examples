@@ -32,4 +32,4 @@ COPY ./examples/envoy_interceptor/envoy-nse/usr/ /usr/
 COPY --from=build /go/bin/nse /usr/bin/nse
 
 ENTRYPOINT [ "/sbin/tini", "--" ]
-CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+CMD ["/usr/bin/nse"]

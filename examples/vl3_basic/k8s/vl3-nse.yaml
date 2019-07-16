@@ -30,7 +30,7 @@ spec:
             - name: JAEGER_SERVICE_PORT_JAEGER
               value: "6831"
             - name: NSREGISTRY_ADDR
-              value: "192.150.40.53"
+              value: "192.150.40.43"
             - name: NSREGISTRY_PORT
               value: "5000"
           securityContext:
