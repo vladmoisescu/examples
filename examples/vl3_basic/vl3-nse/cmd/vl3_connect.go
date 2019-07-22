@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	NSREGISTRY_ADDR  = "nsmgr.nsm-system"
+	NSREGISTRY_ADDR  = "nsmmgr.nsm-system"
 	NSREGISTRY_PORT = "5000"
 )
 
@@ -101,8 +101,23 @@ func newVL3ConnectComposite(configuration *common.NSConfiguration) *vL3ConnectCo
 
 	var nsDiscoveryClient registry.NetworkServiceDiscoveryClient
 
+	regAddr := net.ParseIP(nsRegAddr)
+	if regAddr == nil {
+		regAddrList, err := net.LookupHost(nsRegAddr)
+		if err != nil {
+			logrus.Errorf("nsmConnection registry address resolution Error: %v", err)
+		} else {
+			logrus.Infof("newVL3ConnectComposite: resolved %s to %v", nsRegAddr, regAddrList)
+			for _, regAddrVal := range regAddrList {
+				if regAddr = net.ParseIP(regAddrVal); regAddr != nil {
+					logrus.Infof("newVL3ConnectComposite: NSregistry using IP %s", regAddrVal)
+					break
+				}
+			}
+		}
+	}
 	regPort, _ := strconv.Atoi(nsRegPort)
-	nsRegGrpcClient, err := tools.SocketOperationCheck(&net.TCPAddr{IP: net.ParseIP(nsRegAddr), Port: regPort})
+	nsRegGrpcClient, err := tools.SocketOperationCheck(&net.TCPAddr{IP: regAddr, Port: regPort})
 	if err != nil {
 		logrus.Errorf("nsmConnection GRPC Client Socket Error: %v", err)
 		//return nil
