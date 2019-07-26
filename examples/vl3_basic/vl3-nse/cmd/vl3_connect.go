@@ -11,9 +11,7 @@ import (
 	"github.com/networkservicemesh/networkservicemesh/sdk/endpoint"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"net"
 	"os"
-	"strconv"
 )
 
 const (
@@ -55,9 +53,14 @@ func (vxc *vL3ConnectComposite) Request(ctx context.Context,
 		} else {
 			logrus.Infof("vL3ConnectComposite found network service; going through endpoints")
 			for _, vl3endpoint := range response.NetworkServiceEndpoints {
-				logrus.Infof("Found vL3 service %s peer %s", vl3endpoint.NetworkServiceName,
-					vl3endpoint.EndpointName)
-				vxc.vl3NsePeers[vl3endpoint.EndpointName] = vl3endpoint.NetworkServiceManagerName
+				if vl3endpoint.EndpointName != GetMyNseName() {
+					logrus.Infof("Found vL3 service %s peer %s", vl3endpoint.NetworkServiceName,
+						vl3endpoint.EndpointName)
+					vxc.vl3NsePeers[vl3endpoint.EndpointName] = vl3endpoint.NetworkServiceManagerName
+				} else {
+					logrus.Infof("Found my vL3 service %s instance endpoint name: %s", vl3endpoint.NetworkServiceName,
+						vl3endpoint.EndpointName)
+				}
 			}
 		}
 	}
@@ -101,6 +104,7 @@ func newVL3ConnectComposite(configuration *common.NSConfiguration) *vL3ConnectCo
 
 	var nsDiscoveryClient registry.NetworkServiceDiscoveryClient
 
+	/*
 	regAddr := net.ParseIP(nsRegAddr)
 	if regAddr == nil {
 		regAddrList, err := net.LookupHost(nsRegAddr)
@@ -118,6 +122,8 @@ func newVL3ConnectComposite(configuration *common.NSConfiguration) *vL3ConnectCo
 	}
 	regPort, _ := strconv.Atoi(nsRegPort)
 	nsRegGrpcClient, err := tools.SocketOperationCheck(&net.TCPAddr{IP: regAddr, Port: regPort})
+	*/
+	nsRegGrpcClient, err := tools.DialTCP(nsRegAddr + ":" + nsRegPort)
 	if err != nil {
 		logrus.Errorf("nsmConnection GRPC Client Socket Error: %v", err)
 		//return nil

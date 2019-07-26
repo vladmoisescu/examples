@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: vl3-nse
-          image: networkservicemesh/vl3_basic-vl3-nse:latest
+          image: tiswanso/vl3_basic-vl3-nse:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: ADVERTISE_NSE_NAME
@@ -28,6 +28,10 @@ spec:
             - name: JAEGER_SERVICE_HOST
               value: jaeger.nsm-system
             - name: JAEGER_SERVICE_PORT_JAEGER
+              value: "6831"
+            - name: JAEGER_AGENT_HOST
+              value: jaeger.nsm-system
+            - name: JAEGER_AGENT_PORT
               value: "6831"
             - name: NSREGISTRY_ADDR
               value: "nsmmgr.nsm-system"
