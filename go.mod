@@ -13,3 +13,5 @@ require (
 	github.com/spf13/viper v1.4.0
 	google.golang.org/grpc v1.22.0
 )
+
+replace github.com/networkservicemesh/networkservicemesh => ../networkservicemesh
