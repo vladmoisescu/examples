@@ -23,6 +23,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var (
+	nsmEndpoint *endpoint.NsmEndpoint
+)
+
 func main() {
 
 	// Capture signals to cleanup before exiting
@@ -34,14 +38,19 @@ func main() {
 		newVL3ConnectComposite(nil),
 		endpoint.NewConnectionEndpoint(nil))
 
-	nsmEndpoint, err := endpoint.NewNSMEndpoint(context.TODO(), nil, composite)
+	nsme, err := endpoint.NewNSMEndpoint(context.TODO(), nil, composite)
 	if err != nil {
 		logrus.Fatalf("%v", err)
 	}
-
+	nsmEndpoint = nsme
 	_ = nsmEndpoint.Start()
+	logrus.Infof("Started NSE --got name %s", nsmEndpoint.GetName())
 	defer func() { _ = nsmEndpoint.Delete() }()
 
 	// Capture signals to cleanup before exiting
 	<-c
+}
+
+func GetMyNseName() string {
+	return nsmEndpoint.GetName()
 }
