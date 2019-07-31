@@ -19,9 +19,22 @@ const (
 	NSREGISTRY_PORT = "5000"
 )
 
+type vL3PeerState int
+
+const (
+	PEER_STATE_NOTCONN vL3PeerState = iota
+	PEER_STATE_CONN
+)
+
+type vL3NsePeer struct {
+	endpointName string
+	networkServiceManagerName string
+	state vL3PeerState
+}
+
 type vL3ConnectComposite struct {
 	endpoint.BaseCompositeEndpoint
-	vl3NsePeers     map[string]string
+	vl3NsePeers     map[string]vL3NsePeer
 	nsRegGrpcClient   *grpc.ClientConn
 	nsDiscoveryClient registry.NetworkServiceDiscoveryClient
 }
@@ -56,7 +69,11 @@ func (vxc *vL3ConnectComposite) Request(ctx context.Context,
 				if vl3endpoint.EndpointName != GetMyNseName() {
 					logrus.Infof("Found vL3 service %s peer %s", vl3endpoint.NetworkServiceName,
 						vl3endpoint.EndpointName)
-					vxc.vl3NsePeers[vl3endpoint.EndpointName] = vl3endpoint.NetworkServiceManagerName
+					vxc.vl3NsePeers[vl3endpoint.EndpointName] = vL3NsePeer{
+						endpointName: vl3endpoint.EndpointName,
+						networkServiceManagerName: vl3endpoint.NetworkServiceManagerName,
+						state: PEER_STATE_NOTCONN,
+					}
 				} else {
 					logrus.Infof("Found my vL3 service %s instance endpoint name: %s", vl3endpoint.NetworkServiceName,
 						vl3endpoint.EndpointName)
