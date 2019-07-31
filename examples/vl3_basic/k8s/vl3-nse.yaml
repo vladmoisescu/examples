@@ -1,11 +1,10 @@
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: DaemonSet
 spec:
   selector:
     matchLabels:
       networkservicemesh.io/app: "vl3-nse"
-  replicas: 3
   template:
     metadata:
       labels:
