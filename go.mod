@@ -11,7 +11,7 @@ require (
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/viper v1.4.0
-	google.golang.org/grpc v1.22.0
+	google.golang.org/grpc v1.22.1
 )
 
 replace github.com/networkservicemesh/networkservicemesh => ../networkservicemesh
