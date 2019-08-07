@@ -114,7 +114,7 @@ func (vxc *vL3ConnectComposite) Request(ctx context.Context,
 					if vl3endpoint.GetEndpointName() != GetMyNseName() {
 						logrus.Infof("Found vL3 service %s peer %s", vl3endpoint.NetworkServiceName,
 							vl3endpoint.GetEndpointName())
-						go vxc.ConnectPeerEndpoint(vxc.addPeer(vl3endpoint.GetEndpointName(), vl3endpoint.NetworkServiceManagerName))
+						go vxc.ConnectPeerEndpoint(ctx, vxc.addPeer(vl3endpoint.GetEndpointName(), vl3endpoint.NetworkServiceManagerName))
 					} else {
 						logrus.Infof("Found my vL3 service %s instance endpoint name: %s", vl3endpoint.NetworkServiceName,
 							vl3endpoint.GetEndpointName())
@@ -142,7 +142,7 @@ func (vxc *vL3ConnectComposite) Name() string {
 	return "vL3 NSE"
 }
 
-func (vxc *vL3ConnectComposite) createPeerConnectionRequest(peer *vL3NsePeer) {
+func (vxc *vL3ConnectComposite) createPeerConnectionRequest(ctx context.Context, peer *vL3NsePeer) {
 	/* This func impl is based on sdk/client/client.go::NsmClient.Connect() */
 	vxc.setPeerState(peer.endpointName, PEER_STATE_CONN_INPROG)
 	mechanismType := common.MechanismFromString("KERNEL")
@@ -183,7 +183,7 @@ func (vxc *vL3ConnectComposite) createPeerConnectionRequest(peer *vL3NsePeer) {
 			outgoingMechanism,
 		},
 	}
-	peer.connHdl, err = vxc.performPeerConnectRequest(outgoingRequest)
+	peer.connHdl, err = vxc.performPeerConnectRequest(ctx, outgoingRequest)
 	if err != nil {
 		vxc.setPeerState(peer.endpointName, PEER_STATE_CONNERR)
 		peer.connErr = err
@@ -193,18 +193,18 @@ func (vxc *vL3ConnectComposite) createPeerConnectionRequest(peer *vL3NsePeer) {
 	vxc.setPeerState(peer.endpointName, PEER_STATE_CONN)
 }
 
-func (vxc *vL3ConnectComposite) performPeerConnectRequest(outgoingRequest *networkservice.NetworkServiceRequest) (*connection.Connection, error) {
+func (vxc *vL3ConnectComposite) performPeerConnectRequest(ctx context.Context, outgoingRequest *networkservice.NetworkServiceRequest) (*connection.Connection, error) {
 	var outgoingConnection *connection.Connection
 	connectRetries := 5
 	connectSleep := 5 * time.Second
-	connectTimeout := 10 * time.Second
+	//connectTimeout := 10 * time.Second
 	start := time.Now()
 	for iteration := connectRetries; iteration > 0; <-time.After(connectSleep) {
 		var err error
 		logrus.Infof("vL3 Sending outgoing request %v", outgoingRequest)
 
-		ctx, cancel := context.WithTimeout(nsmEndpoint.Context, connectTimeout)
-		defer cancel()
+		//ctx, cancel := context.WithTimeout(nsmEndpoint.Context, connectTimeout)
+		//defer cancel()
 		outgoingConnection, err = nsmEndpoint.NsClient.Request(ctx, outgoingRequest)
 
 		if err != nil {
@@ -225,7 +225,7 @@ func (vxc *vL3ConnectComposite) performPeerConnectRequest(outgoingRequest *netwo
 	return outgoingConnection, nil
 }
 
-func (vxc *vL3ConnectComposite) ConnectPeerEndpoint(peer *vL3NsePeer) {
+func (vxc *vL3ConnectComposite) ConnectPeerEndpoint(ctx context.Context, peer *vL3NsePeer) {
 	// build connection object
 	// perform remote networkservice request
 	logrus.WithFields(logrus.Fields{
@@ -241,7 +241,7 @@ func (vxc *vL3ConnectComposite) ConnectPeerEndpoint(peer *vL3NsePeer) {
 			"endpointName": peer.endpointName,
 			"networkServiceManagerName": peer.networkServiceManagerName,
 		}).Info("request remote connection")
-		vxc.createPeerConnectionRequest(peer)
+		vxc.createPeerConnectionRequest(ctx, peer)
 	case PEER_STATE_CONN:
 		logrus.WithFields(logrus.Fields{
 			"endpointName": peer.endpointName,
