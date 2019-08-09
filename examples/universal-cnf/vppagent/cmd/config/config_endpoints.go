@@ -36,8 +36,12 @@ type ProcessEndpoints struct {
 	Endpoints []*SingleEndpoint
 }
 
+type CompositeEndpointAddons interface {
+	AddCompositeEndpoints(*common.NSConfiguration) *[]endpoint.ChainedEndpoint
+}
+
 // NewProcessEndpoints returns a new ProcessInitCommands struct
-func NewProcessEndpoints(backend UniversalCNFBackend, endpoints []*Endpoint) *ProcessEndpoints {
+func NewProcessEndpoints(backend UniversalCNFBackend, endpoints []*Endpoint, ceAddons CompositeEndpointAddons) *ProcessEndpoints {
 	result := &ProcessEndpoints{}
 
 	for _, e := range endpoints {
@@ -63,6 +67,11 @@ func NewProcessEndpoints(backend UniversalCNFBackend, endpoints []*Endpoint) *Pr
 				routeAddr := makeRouteMutator(e.Ipam.Routes)
 				compositeEndpoints = append(compositeEndpoints, endpoint.NewCustomFuncEndpoint("route", routeAddr))
 			}
+		}
+		// Invoke any additional composite endpoint constructors via the add-on interface
+		addCompositeEndpoints := ceAddons.AddCompositeEndpoints(configuration)
+		if addCompositeEndpoints != nil {
+			compositeEndpoints = append(compositeEndpoints, *addCompositeEndpoints...)
 		}
 
 		compositeEndpoints = append(compositeEndpoints, endpoint.NewConnectionEndpoint(configuration))

@@ -27,18 +27,21 @@ import (
 
 const (
 	defaultConfigPath = "/etc/universal-cnf/config.yaml"
+	defaultPluginModule = ""
 )
 
 // Flags holds the command line flags as supplied with the binary invocation
 type Flags struct {
 	ConfigPath string
 	Verify     bool
+	CompositeEndpointPluginModule string
 }
 
 // Process will parse the command line flags and init the structure members
 func (mf *Flags) Process() {
 	flag.StringVar(&mf.ConfigPath, "file", defaultConfigPath, " full path to the configuration file")
 	flag.BoolVar(&mf.Verify, "verify", false, "only verify the configuration, don't run")
+	flag.StringVar(&mf.CompositeEndpointPluginModule, "ceplugin", defaultPluginModule, " full path to the composite endpoint plugin .so file")
 	flag.Parse()
 }
 
@@ -73,7 +76,12 @@ func main() {
 		logrus.Fatalf("Error processing the init actions: %v", err)
 	}
 
-	pe := config.NewProcessEndpoints(cnfConfig.GetBackend(), cnfConfig.Endpoints)
+	ceAddon, err := GetPluginCompositeEndpoints(mainFlags.CompositeEndpointPluginModule)
+	if err != nil {
+		logrus.Errorf("Failed to get composite endpoints addon method from plugin")
+	}
+
+	pe := config.NewProcessEndpoints(cnfConfig.GetBackend(), cnfConfig.Endpoints, ceAddon)
 	defer pe.Cleanup()
 
 	if err := pe.Process(); err != nil {
