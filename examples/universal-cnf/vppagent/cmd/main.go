@@ -17,10 +17,12 @@ package main
 
 import (
 	"flag"
+	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/ucnf"
+	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/vppagent"
+	"github.com/networkservicemesh/networkservicemesh/sdk/common"
+	"github.com/networkservicemesh/networkservicemesh/sdk/endpoint"
 	"os"
 
-	config "github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/cmd/config"
-	vppagent "github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/cmd/vppagent"
 	"github.com/networkservicemesh/networkservicemesh/pkg/tools"
 	"github.com/sirupsen/logrus"
 )
@@ -34,15 +36,19 @@ const (
 type Flags struct {
 	ConfigPath string
 	Verify     bool
-	CompositeEndpointPluginModule string
 }
 
 // Process will parse the command line flags and init the structure members
 func (mf *Flags) Process() {
 	flag.StringVar(&mf.ConfigPath, "file", defaultConfigPath, " full path to the configuration file")
 	flag.BoolVar(&mf.Verify, "verify", false, "only verify the configuration, don't run")
-	flag.StringVar(&mf.CompositeEndpointPluginModule, "ceplugin", defaultPluginModule, " full path to the composite endpoint plugin .so file")
 	flag.Parse()
+}
+
+type defaultCompositeEndpointAddon string
+
+func (dcea defaultCompositeEndpointAddon) AddCompositeEndpoints(nsConfig *common.NSConfiguration) *[]endpoint.ChainedEndpoint {
+	return nil
 }
 
 func main() {
@@ -55,38 +61,8 @@ func main() {
 	mainFlags := &Flags{}
 	mainFlags.Process()
 
-	cnfConfig, err := config.NewUniversalCNFConfig(&vppagent.UniversalCNFVPPAgentBackend{})
-	if err != nil {
-		logrus.Fatalf("Error creating the Universal CNF Config")
-	}
-
-	if err := cnfConfig.InitConfig(mainFlags.ConfigPath); err != nil {
-		logrus.Fatalf("Error processing [%s]: %v", mainFlags.ConfigPath, err)
-	}
-
-	if mainFlags.Verify {
-		cnfConfig.Dump()
-		os.Exit(0)
-	}
-
-	pia := config.NewProcessInitActions(cnfConfig.GetBackend(), cnfConfig.InitActions)
-	defer pia.Cleanup()
-
-	if err := pia.Process(cnfConfig.GetBackend()); err != nil {
-		logrus.Fatalf("Error processing the init actions: %v", err)
-	}
-
-	ceAddon, err := GetPluginCompositeEndpoints(mainFlags.CompositeEndpointPluginModule)
-	if err != nil {
-		logrus.Errorf("Failed to get composite endpoints addon method from plugin")
-	}
-
-	pe := config.NewProcessEndpoints(cnfConfig.GetBackend(), cnfConfig.Endpoints, ceAddon)
-	defer pe.Cleanup()
-
-	if err := pe.Process(); err != nil {
-		logrus.Fatalf("Error processing the new endpoints: %v", err)
-	}
-
+	var defCEAddon defaultCompositeEndpointAddon
+	ucnfNse := ucnf.NewUcnfNse(mainFlags.ConfigPath, mainFlags.Verify, &vppagent.UniversalCNFVPPAgentBackend{}, defCEAddon)
+	defer ucnfNse.Cleanup()
 	<-c
 }
