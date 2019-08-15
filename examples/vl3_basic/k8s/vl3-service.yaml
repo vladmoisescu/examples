@@ -10,4 +10,4 @@ spec:
       route:
         - destination:
           destinationSelector:
-            app: vl3-nse
+            app: vl3-nse-ucnf

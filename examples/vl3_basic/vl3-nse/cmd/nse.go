@@ -16,9 +16,32 @@
 package main
 
 import (
+	"flag"
+	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/ucnf"
+	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/vppagent"
+	"github.com/networkservicemesh/networkservicemesh/pkg/tools"
 	"github.com/networkservicemesh/networkservicemesh/sdk/common"
 	"github.com/networkservicemesh/networkservicemesh/sdk/endpoint"
+	"github.com/sirupsen/logrus"
+	"os"
 )
+const (
+	defaultConfigPath = "/etc/universal-cnf/config.yaml"
+	defaultPluginModule = ""
+)
+
+// Flags holds the command line flags as supplied with the binary invocation
+type Flags struct {
+	ConfigPath string
+	Verify     bool
+}
+
+// Process will parse the command line flags and init the structure members
+func (mf *Flags) Process() {
+	flag.StringVar(&mf.ConfigPath, "file", defaultConfigPath, " full path to the configuration file")
+	flag.BoolVar(&mf.Verify, "verify", false, "only verify the configuration, don't run")
+	flag.Parse()
+}
 
 type vL3CompositeEndpoint string
 
@@ -32,6 +55,22 @@ func (vL3ce vL3CompositeEndpoint) AddCompositeEndpoints(nsConfig *common.NSConfi
 
 // exported the symbol named "CompositeEndpointPlugin"
 var  CompositeEndpointPlugin vL3CompositeEndpoint
+
+func main() {
+	// Capture signals to cleanup before exiting
+	c := tools.NewOSSignalChannel()
+
+	logrus.SetOutput(os.Stdout)
+	logrus.SetLevel(logrus.TraceLevel)
+
+	mainFlags := &Flags{}
+	mainFlags.Process()
+
+	//var defCEAddon defaultCompositeEndpointAddon
+	ucnfNse := ucnf.NewUcnfNse(mainFlags.ConfigPath, mainFlags.Verify, &vppagent.UniversalCNFVPPAgentBackend{}, CompositeEndpointPlugin)
+	defer ucnfNse.Cleanup()
+	<-c
+}
 
 /*
 var (
