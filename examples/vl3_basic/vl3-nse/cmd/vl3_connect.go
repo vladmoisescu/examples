@@ -76,7 +76,8 @@ func (vxc *vL3ConnectComposite) addPeer(endpointName, networkServiceManagerName 
 }
 func (vxc *vL3ConnectComposite) SetMyNseName(request *networkservice.NetworkServiceRequest) {
 	if vxc.myEndpointName == "" {
-		vxc.myEndpointName = request.Connection.NetworkServiceEndpointName
+		logrus.Infof("Setting vL3connect composite endpoint name to %s", request.GetConnection().GetNetworkServiceEndpointName())
+		vxc.myEndpointName = request.GetConnection().GetNetworkServiceEndpointName()
 	}
 }
 
@@ -86,7 +87,10 @@ func (vxc *vL3ConnectComposite) GetMyNseName() string {
 
 func (vxc *vL3ConnectComposite) Request(ctx context.Context,
 	request *networkservice.NetworkServiceRequest) (*connection.Connection, error) {
-	logrus.Infof("vL3ConnectComposite Request handler")
+	logrus.WithFields(logrus.Fields{
+		"endpointName": request.GetConnection().GetNetworkServiceEndpointName(),
+		"networkServiceManagerName": request.GetConnection().GetSourceNetworkServiceManagerName(),
+	}).Infof("vL3ConnectComposite Request handler")
 	if vxc.GetNext() == nil {
 		logrus.Fatal("Should have Next set")
 	}
@@ -347,6 +351,7 @@ func newVL3ConnectComposite(configuration *common.NSConfiguration) *vL3ConnectCo
 
 	newVL3ConnectComposite := &vL3ConnectComposite{
 		nsConfig: configuration,
+		myEndpointName: "",
 		vl3NsePeers: make(map[string]*vL3NsePeer),
 		nsRegGrpcClient: nsRegGrpcClient,
 		nsDiscoveryClient: nsDiscoveryClient,
