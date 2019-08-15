@@ -100,6 +100,7 @@ func (pe *ProcessEndpoints) Process() error {
 		}
 
 		_ = nsEndpoint.Start()
+		logrus.Infof("Started endpoint %s", nsEndpoint.GetName())
 		e.Cleanup = func() { _ = nsEndpoint.Delete() }
 	}
 	return nil
