@@ -25,4 +25,4 @@ docker-vl3: build-vl3
 	cp -p ./examples/vl3_basic/vl3-nse/Dockerfile.no_go_build_ucnf ${DOCKER_BUILD_TOP}/vl3/
 	cp -p ${GOPATH}/bin/linux_amd64/vl3_nse ${DOCKER_BUILD_TOP}/vl3/
 	cp -pr ./examples/universal-cnf/vppagent/etc/ ${DOCKER_BUILD_TOP}/vl3/etc/
-	cd ${DOCKER_BUILD_TOP}/vl3 && docker build -t ${ORG}/vl3_ucnf-vl3-nse --build-arg VPP_AGENT=${VPP_AGENT} -f Dockerfile.no_go_build_ucnf .
+	cd ${DOCKER_BUILD_TOP}/vl3 && docker build -t ${ORG}/vl3_ucnf-vl3-nse:${TAG} --build-arg VPP_AGENT=${VPP_AGENT} -f Dockerfile.no_go_build_ucnf .
