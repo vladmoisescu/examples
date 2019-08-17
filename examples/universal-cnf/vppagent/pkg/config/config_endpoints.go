@@ -46,10 +46,15 @@ func NewProcessEndpoints(backend UniversalCNFBackend, endpoints []*Endpoint, ceA
 
 	for _, e := range endpoints {
 
+		var ipPrefix string
+		if e.Ipam != nil {
+			ipPrefix = e.Ipam.PrefixPool
+		}
 		configuration := &common.NSConfiguration{
 			AdvertiseNseName:   e.Name,
 			AdvertiseNseLabels: labelStringFromMap(e.Labels),
 			MechanismType:      "mem",
+			IPAddress:  ipPrefix,
 		}
 
 		// Build the list of composites
@@ -59,9 +64,11 @@ func NewProcessEndpoints(backend UniversalCNFBackend, endpoints []*Endpoint, ceA
 		}
 
 		if e.Ipam != nil {
+			/*
 			compositeEndpoints = append(compositeEndpoints, endpoint.NewIpamEndpoint(&common.NSConfiguration{
 				IPAddress: e.Ipam.PrefixPool,
 			}))
+			 */
 
 			if len(e.Ipam.Routes) > 0 {
 				routeAddr := makeRouteMutator(e.Ipam.Routes)
