@@ -54,6 +54,7 @@ type vL3ConnectComposite struct {
 	nsRegGrpcClient   *grpc.ClientConn
 	nsDiscoveryClient registry.NetworkServiceDiscoveryClient
 	nsClient networkservice.NetworkServiceClient
+	ipamEndpoint *endpoint.IpamEndpoint
 }
 
 func (vxc *vL3ConnectComposite) setPeerState(endpointName string, state vL3PeerState) {
@@ -96,10 +97,16 @@ func (vxc *vL3ConnectComposite) Request(ctx context.Context,
 		logrus.Fatal("Should have Next set")
 	}
 
+	/* NOTE: for IPAM we assume there's no IPAM endpoint in the composite endpoint list */
+	/* -we are taking care of that here in this handler */
 	incoming, err := vxc.GetNext().Request(ctx, request)
 	if err != nil {
 		logrus.Error(err)
 		return nil, err
+	}
+
+	mySubnetRoute := connectioncontext.Route{
+		Prefix:               vxc.nsConfig.IPAddress,
 	}
 
 	if vl3SrcEndpointName, ok := request.GetConnection().GetLabels()[LABEL_NSESOURCE]; ok {
@@ -115,6 +122,8 @@ func (vxc *vL3ConnectComposite) Request(ctx context.Context,
 		peer.excludedPrefixes = removeDuplicates(append(peer.excludedPrefixes, incoming.Context.IpContext.ExcludedPrefixes...))
 		incoming.Context.IpContext.ExcludedPrefixes = peer.excludedPrefixes
 		peer.connHdl = request.GetConnection()
+
+		incoming.Context.IpContext.DstRoutes = append(incoming.Context.IpContext.DstRoutes, &mySubnetRoute)
 		vxc.setPeerState(vl3SrcEndpointName, PEER_STATE_CONN_RX)
 	} else {
 		vxc.SetMyNseName(request)
@@ -147,6 +156,8 @@ func (vxc *vL3ConnectComposite) Request(ctx context.Context,
 								"peerEndpoint": vl3endpoint.GetEndpointName(),
 							}).Errorf("Failed to connect to vL3 Peer")
 						} else {
+							incoming.Context.IpContext.DstRoutes = append(incoming.Context.IpContext.DstRoutes,
+								peer.connHdl.Context.IpContext.DstRoutes...)
 							incoming.Context.IpContext.ExcludedPrefixes = peer.excludedPrefixes
 							if peer.connHdl != nil {
 								logrus.WithFields(logrus.Fields{
@@ -154,6 +165,7 @@ func (vxc *vL3ConnectComposite) Request(ctx context.Context,
 									"srcIP":                peer.connHdl.Context.IpContext.SrcIpAddr,
 									"ConnExcludedPrefixes": peer.connHdl.Context.IpContext.ExcludedPrefixes,
 									"peerExcludedPrefixes": peer.excludedPrefixes,
+									"peer.DstRoutes": peer.connHdl.Context.IpContext.DstRoutes,
 								}).Infof("Connected to vL3 Peer")
 							} else {
 								logrus.WithFields(logrus.Fields{
@@ -340,6 +352,7 @@ func newVL3ConnectComposite(configuration *common.NSConfiguration) *vL3ConnectCo
 	if !ok {
 		nsRegPort = NSREGISTRY_PORT
 	}
+
 	/*nsPort, ok := os.LookupEnv("NSCLIENT_PORT")
 	if !ok {
 		nsPort = NSCLIENT_PORT
