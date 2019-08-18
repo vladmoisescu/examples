@@ -79,9 +79,8 @@ func (vL3ce vL3CompositeEndpoint) AddCompositeEndpoints(nsConfig *common.NSConfi
 	ipamEp := endpoint.NewIpamEndpoint(&common.NSConfiguration{
 		IPAddress: prefixPool,
 	})
-	nsConfig.IPAddress = prefixPool
 	compositeEndpoints := []endpoint.ChainedEndpoint{
-		newVL3ConnectComposite(nsConfig),
+		newVL3ConnectComposite(nsConfig, prefixPool, &vppagent.UniversalCNFVPPAgentBackend{}),
 		ipamEp,
 	}
 
