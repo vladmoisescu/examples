@@ -70,8 +70,8 @@ data:
       labels:
         app: "vl3-nse-ucnf"
       ipam:
-        prefixpool: "10.60.3.0/24"
-        routes: ["10.60.1.0/24", "10.60.2.0/24", "10.60.3.0/24"]
+        prefixpool: "10.60.0.0/16"
+        routes: []
       ifname: "endpoint0"
       action:
         dpconfig:
