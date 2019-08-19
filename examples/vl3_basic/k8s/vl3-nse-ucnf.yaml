@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: vl3-nse
-          image: tiswanso/vl3_ucnf-vl3-nse:connRoute
+          image: tiswanso/vl3_ucnf-vl3-nse:connRoute2
           imagePullPolicy: Always
           env:
             - name: ADVERTISE_NSE_NAME
@@ -73,28 +73,3 @@ data:
         prefixpool: "10.60.0.0/16"
         routes: []
       ifname: "endpoint0"
-      action:
-        dpconfig:
-          acls:
-            - name: "acl-1"
-              rules:
-              - action: 2
-                iprule:
-                  icmp:
-                    icmptyperange:
-                      first: 8
-                      last: 8
-                    icmpcoderange:
-                      first: 0
-                      last: 65535
-              - action: 2
-                iprule:
-                  tcp:
-                    sourceportrange:
-                      lowerport: 0
-                      upperport: 65535
-                    destinationportrange:
-                      lowerport: 80
-                      upperport: 80
-              interfaces:
-                ingress: ["endpoint0"]

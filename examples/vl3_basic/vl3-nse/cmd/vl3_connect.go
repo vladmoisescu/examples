@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/ligato/vpp-agent/api/models/vpp"
 	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/config"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/pkg/apis/connectioncontext"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/pkg/apis/local/connection"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/pkg/apis/local/networkservice"
 	"github.com/networkservicemesh/networkservicemesh/sdk/client"
+	"sync"
 	//remote_connection "github.com/networkservicemesh/networkservicemesh/controlplane/pkg/apis/remote/connection"
 	//remote_networkservice "github.com/networkservicemesh/networkservicemesh/controlplane/pkg/apis/remote/networkservice"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/pkg/apis/registry"
@@ -37,6 +39,7 @@ const (
 )
 
 type vL3NsePeer struct {
+	sync.RWMutex
 	endpointName string
 	networkServiceManagerName string
 	state vL3PeerState
@@ -46,6 +49,7 @@ type vL3NsePeer struct {
 }
 
 type vL3ConnectComposite struct {
+	sync.RWMutex
 	endpoint.BaseCompositeEndpoint
 	myEndpointName string
 	nsConfig *common.NSConfiguration
@@ -59,15 +63,37 @@ type vL3ConnectComposite struct {
 	backend config.UniversalCNFBackend
 }
 
-func (vxc *vL3ConnectComposite) setPeerState(endpointName string, state vL3PeerState) {
-	vxc.vl3NsePeers[endpointName].state = state
+func (peer *vL3NsePeer) setPeerState(state vL3PeerState) {
+	peer.Lock()
+	defer peer.Unlock()
+	peer.state = state
 }
 
-func (vxc *vL3ConnectComposite) setPeerConnHdl(endpointName string, connHdl *connection.Connection) {
-	vxc.vl3NsePeers[endpointName].connHdl = connHdl
+func (peer *vL3NsePeer) getPeerState() vL3PeerState {
+	peer.Lock()
+	defer peer.Unlock()
+	return peer.state
+}
+func (peer *vL3NsePeer) setPeerConnHdl(connHdl *connection.Connection, connErr error) {
+	peer.Lock()
+	defer peer.Unlock()
+	peer.connHdl = connHdl
+	peer.connErr = connErr
+}
+
+func (vxc *vL3ConnectComposite) getPeer(endpointName string) *vL3NsePeer {
+	vxc.Lock()
+	defer vxc.Unlock()
+	peer, ok := vxc.vl3NsePeers[endpointName]
+	if !ok {
+		return nil
+	}
+	return peer
 }
 
 func (vxc *vL3ConnectComposite) addPeer(endpointName, networkServiceManagerName string) *vL3NsePeer {
+	vxc.Lock()
+	defer vxc.Unlock()
 	_, ok := vxc.vl3NsePeers[endpointName]
 	if !ok {
 		vxc.vl3NsePeers[endpointName] = &vL3NsePeer{
@@ -79,6 +105,8 @@ func (vxc *vL3ConnectComposite) addPeer(endpointName, networkServiceManagerName 
 	return vxc.vl3NsePeers[endpointName]
 }
 func (vxc *vL3ConnectComposite) SetMyNseName(request *networkservice.NetworkServiceRequest) {
+	vxc.Lock()
+	defer vxc.Unlock()
 	if vxc.myEndpointName == "" {
 		logrus.Infof("Setting vL3connect composite endpoint name to %s", request.GetConnection().GetNetworkServiceEndpointName())
 		vxc.myEndpointName = request.GetConnection().GetNetworkServiceEndpointName()
@@ -86,7 +114,33 @@ func (vxc *vL3ConnectComposite) SetMyNseName(request *networkservice.NetworkServ
 }
 
 func (vxc *vL3ConnectComposite) GetMyNseName() string {
+	vxc.Lock()
+	defer vxc.Unlock()
 	return vxc.myEndpointName
+}
+
+func (vxc *vL3ConnectComposite) processPeerRequest(vl3SrcEndpointName string, request *networkservice.NetworkServiceRequest, incoming *connection.Connection) error {
+	logrus.Infof("vL3ConnectComposite received connection request from vL3 NSE %s", vl3SrcEndpointName)
+	peer := vxc.addPeer(vl3SrcEndpointName, request.GetConnection().GetSourceNetworkServiceManagerName())
+	peer.Lock()
+	defer peer.Unlock()
+	logrus.WithFields(logrus.Fields{
+		"endpointName": peer.endpointName,
+		"networkServiceManagerName": peer.networkServiceManagerName,
+		"prior_state": peer.state,
+		"new_state": PEER_STATE_CONN_RX,
+	}).Infof("vL3ConnectComposite vl3 NSE peer %s added", vl3SrcEndpointName)
+	peer.excludedPrefixes = removeDuplicates(append(peer.excludedPrefixes, incoming.Context.IpContext.ExcludedPrefixes...))
+	incoming.Context.IpContext.ExcludedPrefixes = peer.excludedPrefixes
+	peer.connHdl = request.GetConnection()
+
+	/* tell my peer to route to me for my ipamCIDR */
+	mySubnetRoute := connectioncontext.Route{
+		Prefix:               vxc.ipamCidr,
+	}
+	incoming.Context.IpContext.DstRoutes = append(incoming.Context.IpContext.DstRoutes, &mySubnetRoute)
+	peer.state = PEER_STATE_CONN_RX
+	return nil
 }
 
 func (vxc *vL3ConnectComposite) Request(ctx context.Context,
@@ -109,24 +163,8 @@ func (vxc *vL3ConnectComposite) Request(ctx context.Context,
 
 	if vl3SrcEndpointName, ok := request.GetConnection().GetLabels()[LABEL_NSESOURCE]; ok {
 		// request is from another vl3 NSE
-		logrus.Infof("vL3ConnectComposite received connection request from vL3 NSE %s", vl3SrcEndpointName)
-		peer := vxc.addPeer(vl3SrcEndpointName, request.GetConnection().GetSourceNetworkServiceManagerName())
-		logrus.WithFields(logrus.Fields{
-			"endpointName": peer.endpointName,
-			"networkServiceManagerName": peer.networkServiceManagerName,
-			"prior_state": peer.state,
-			"new_state": PEER_STATE_CONN_RX,
-		}).Infof("vL3ConnectComposite vl3 NSE peer %s added", vl3SrcEndpointName)
-		peer.excludedPrefixes = removeDuplicates(append(peer.excludedPrefixes, incoming.Context.IpContext.ExcludedPrefixes...))
-		incoming.Context.IpContext.ExcludedPrefixes = peer.excludedPrefixes
-		peer.connHdl = request.GetConnection()
+		err = vxc.processPeerRequest(vl3SrcEndpointName, request, incoming)
 
-		/* tell my peer to route to me for my ipamCIDR */
-		mySubnetRoute := connectioncontext.Route{
-			Prefix:               vxc.ipamCidr,
-		}
-		incoming.Context.IpContext.DstRoutes = append(incoming.Context.IpContext.DstRoutes, &mySubnetRoute)
-		vxc.setPeerState(vl3SrcEndpointName, PEER_STATE_CONN_RX)
 	} else {
 		vxc.SetMyNseName(request)
 		logrus.Infof("vL3ConnectComposite serviceRegistry.DiscoveryClient")
@@ -149,10 +187,7 @@ func (vxc *vL3ConnectComposite) Request(ctx context.Context,
 				logrus.Error(err)
 			} else {
 				logrus.Infof("vL3ConnectComposite found network service; going through endpoints")
-				err = vxc.processNsEndpoints(ctx, response)
-				if err != nil {
-					logrus.Errorf("Failed process endpoints - %v", err)
-				}
+				go vxc.processNsEndpoints(ctx, response)
 			}
 		}
 	}
@@ -184,6 +219,7 @@ func (vxc *vL3ConnectComposite) processNsEndpoints(ctx context.Context, response
 			logrus.Infof("Found vL3 service %s peer %s", vl3endpoint.NetworkServiceName,
 				vl3endpoint.GetEndpointName())
 			peer := vxc.addPeer(vl3endpoint.GetEndpointName(), vl3endpoint.NetworkServiceManagerName)
+			peer.Lock()
 			//peer.excludedPrefixes = removeDuplicates(append(peer.excludedPrefixes, incoming.Context.IpContext.ExcludedPrefixes...))
 			err := vxc.ConnectPeerEndpoint(ctx, peer)
 			if err != nil {
@@ -206,6 +242,7 @@ func (vxc *vL3ConnectComposite) processNsEndpoints(ctx context.Context, response
 					}).Infof("Connected to vL3 Peer but connhdl == nil")
 				}
 			}
+			peer.Unlock()
 		} else {
 			logrus.Infof("Found my vL3 service %s instance endpoint name: %s", vl3endpoint.NetworkServiceName,
 				vl3endpoint.GetEndpointName())
@@ -215,30 +252,42 @@ func (vxc *vL3ConnectComposite) processNsEndpoints(ctx context.Context, response
 }
 
 func (vxc *vL3ConnectComposite) createPeerConnectionRequest(ctx context.Context, peer *vL3NsePeer, routes []string) error {
-	/* This func impl is based on sdk/client/client.go::NsmClient.Connect() */
-	vxc.setPeerState(peer.endpointName, PEER_STATE_CONN_INPROG)
-
-	var dpconfig interface{}
+	/* expected to be called with peer.Lock() */
+	if peer.state == PEER_STATE_CONN || peer.state == PEER_STATE_CONN_INPROG {
+		logrus.WithFields(logrus.Fields{
+			"peer.Endpoint": peer.endpointName,
+		}).Infof("Already connected to peer")
+		return peer.connErr
+	}
+	peer.state = PEER_STATE_CONN_INPROG
+	logrus.WithFields(logrus.Fields{
+		"peer.Endpoint": peer.endpointName,
+	}).Infof("Performing connect to peer")
+	dpconfig := &vpp.ConfigData{}
 	peer.connHdl, peer.connErr = vxc.performPeerConnectRequest(ctx, peer, routes, dpconfig)
 	if peer.connErr != nil {
 		logrus.WithFields(logrus.Fields{
 			"peer.Endpoint": peer.endpointName,
 		}).Errorf("NSE peer connection failed - %v", peer.connErr)
-		vxc.setPeerState(peer.endpointName, PEER_STATE_CONNERR)
+		peer.state = PEER_STATE_CONNERR
 		return peer.connErr
 	}
 
 	if peer.connErr = vxc.backend.ProcessDPConfig(dpconfig); peer.connErr != nil {
-		logrus.Errorf("endpoint %s Error processing dpconfig: %+v", peer.endpointName, dpconfig)
-		vxc.setPeerState(peer.endpointName, PEER_STATE_CONNERR)
+		logrus.Errorf("endpoint %s Error processing dpconfig: %+v -- %v", peer.endpointName, dpconfig, peer.connErr)
+		peer.state = PEER_STATE_CONNERR
 		return peer.connErr
 	}
 
-	vxc.setPeerState(peer.endpointName, PEER_STATE_CONN)
+	peer.state = PEER_STATE_CONN
+	logrus.WithFields(logrus.Fields{
+		"peer.Endpoint": peer.endpointName,
+	}).Infof("Done with connect to peer")
 	return nil
 }
 
 func (vxc *vL3ConnectComposite) performPeerConnectRequest(ctx context.Context, peer *vL3NsePeer, routes []string, dpconfig interface{}) (*connection.Connection, error) {
+	/* expected to be called with peer.Lock() */
     ifName := peer.endpointName
 	conn, err := vxc.nsmClient.ConnectToEndpoint(peer.endpointName, peer.networkServiceManagerName, ifName, "mem", "VPP interface "+ifName, routes)
 	if err != nil {
@@ -252,15 +301,17 @@ func (vxc *vL3ConnectComposite) performPeerConnectRequest(ctx context.Context, p
 }
 
 func (vxc *vL3ConnectComposite) ConnectPeerEndpoint(ctx context.Context, peer *vL3NsePeer) error {
+	/* expected to be called with peer.Lock() */
 	// build connection object
 	// perform remote networkservice request
+	state := peer.state
 	logrus.WithFields(logrus.Fields{
 		"endpointName": peer.endpointName,
 		"networkServiceManagerName": peer.networkServiceManagerName,
-		"state": peer.state,
+		"state": state,
 	}).Info("newVL3Connect ConnectPeerEndpoint")
 
-	switch peer.state {
+	switch state {
 	case PEER_STATE_NOTCONN:
 		// TODO do connection request
 		logrus.WithFields(logrus.Fields{
@@ -322,11 +373,6 @@ func newVL3ConnectComposite(configuration *common.NSConfiguration, ipamCidr stri
 		nsRegPort = NSREGISTRY_PORT
 	}
 
-	/*nsPort, ok := os.LookupEnv("NSCLIENT_PORT")
-	if !ok {
-		nsPort = NSCLIENT_PORT
-	}*/
-
 	// ensure the env variables are processed
 	if configuration == nil {
 		configuration = &common.NSConfiguration{}
@@ -366,7 +412,7 @@ func newVL3ConnectComposite(configuration *common.NSConfiguration, ipamCidr stri
 		logrus.Infof("newVL3ConnectComposite networkDiscoveryClient ok")
 	}
 
-	// TODO? create remote_networkservice API connection
+	// create remote_networkservice API connection
 
 	//var nsClient networkservice.NetworkServiceClient
 	/*
