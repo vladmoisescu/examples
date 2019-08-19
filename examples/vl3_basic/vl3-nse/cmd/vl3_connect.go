@@ -289,6 +289,7 @@ func (vxc *vL3ConnectComposite) createPeerConnectionRequest(ctx context.Context,
 func (vxc *vL3ConnectComposite) performPeerConnectRequest(ctx context.Context, peer *vL3NsePeer, routes []string, dpconfig interface{}) (*connection.Connection, error) {
 	/* expected to be called with peer.Lock() */
     ifName := peer.endpointName
+	vxc.nsmClient.OutgoingNscLabels[LABEL_NSESOURCE] = vxc.GetMyNseName()
 	conn, err := vxc.nsmClient.ConnectToEndpoint(peer.endpointName, peer.networkServiceManagerName, ifName, "mem", "VPP interface "+ifName, routes)
 	if err != nil {
 		logrus.Errorf("Error creating %s: %v", ifName, err)
