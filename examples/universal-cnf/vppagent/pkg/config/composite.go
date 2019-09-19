@@ -17,7 +17,6 @@ package config
 
 import (
 	"context"
-	"fmt"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/pkg/apis/connectioncontext"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/pkg/apis/local/connection"
@@ -30,7 +29,7 @@ import (
 
 // UniversalCNFEndpoint is a Universal CNF Endpoint composite implementation
 type UniversalCNFEndpoint struct {
-	endpoint.BaseCompositeEndpoint
+	//endpoint.BaseCompositeEndpoint
 	endpoint  *Endpoint
 	backend   UniversalCNFBackend
 	nsmClient *client.NsmClient
@@ -39,18 +38,6 @@ type UniversalCNFEndpoint struct {
 // Request implements the request handler
 func (uce *UniversalCNFEndpoint) Request(ctx context.Context,
 	request *networkservice.NetworkServiceRequest) (*connection.Connection, error) {
-
-	if uce.GetNext() == nil {
-		err := fmt.Errorf("universal CNF needs next")
-		logrus.Errorf("%v", err)
-		return nil, err
-	}
-
-	conn, err := uce.GetNext().Request(ctx, request)
-	if err != nil {
-		logrus.Errorf("Next request failed: %v", err)
-		return nil, err
-	}
 
 	if uce.endpoint.Action == nil {
 		uce.endpoint.Action = &Action{}
@@ -62,7 +49,7 @@ func (uce *UniversalCNFEndpoint) Request(ctx context.Context,
 		action.DPConfig = uce.backend.NewDPConfig()
 	}
 
-	if err := uce.backend.ProcessEndpoint(action.DPConfig, uce.endpoint.Name, uce.endpoint.IfName, conn); err != nil {
+	if err := uce.backend.ProcessEndpoint(action.DPConfig, uce.endpoint.Name, uce.endpoint.IfName, request.Connection); err != nil {
 		logrus.Errorf("Failed to process: %+v", uce.endpoint.Action)
 		return nil, err
 	}
@@ -71,15 +58,18 @@ func (uce *UniversalCNFEndpoint) Request(ctx context.Context,
 		logrus.Errorf("Failed to process: %+v", uce.endpoint.Action)
 		return nil, err
 	}
-	return conn, nil
+	if endpoint.Next(ctx) != nil {
+		return endpoint.Next(ctx).Request(ctx, request)
+	}
+	return request.GetConnection(), nil
 }
 
 // Close implements the close handler
 func (uce *UniversalCNFEndpoint) Close(ctx context.Context, connection *connection.Connection) (*empty.Empty, error) {
 	logrus.Infof("Universal CNF DeleteConnection: %v", connection)
 
-	if uce.GetNext() != nil {
-		return uce.GetNext().Close(ctx, connection)
+	if endpoint.Next(ctx) != nil {
+		return endpoint.Next(ctx).Close(ctx, connection)
 	}
 	return &empty.Empty{}, nil
 }
@@ -122,7 +112,7 @@ func NewUniversalCNFEndpoint(backend UniversalCNFBackend, endpoint *Endpoint) *U
 }
 
 func makeRouteMutator(routes []string) endpoint.ConnectionMutator {
-	return func(c *connection.Connection) error {
+	return func(ctx context.Context, c *connection.Connection) error {
 		for _, r := range routes {
 			c.GetContext().GetIpContext().DstRoutes = append(c.GetContext().GetIpContext().DstRoutes, &connectioncontext.Route{
 				Prefix: r,

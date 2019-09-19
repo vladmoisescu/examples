@@ -17,6 +17,7 @@ package config
 
 import (
 	"context"
+	"github.com/networkservicemesh/networkservicemesh/controlplane/pkg/apis/local/networkservice"
 
 	"github.com/networkservicemesh/networkservicemesh/sdk/common"
 	"github.com/networkservicemesh/networkservicemesh/sdk/endpoint"
@@ -26,7 +27,7 @@ import (
 // SingleEndpoint keeps the state of a single endpoint instance
 type SingleEndpoint struct {
 	NSConfiguration *common.NSConfiguration
-	NSComposite     *endpoint.CompositeEndpoint
+	NSComposite     *networkservice.NetworkServiceServer
 	Endpoint        *Endpoint
 	Cleanup         func()
 }
@@ -37,7 +38,7 @@ type ProcessEndpoints struct {
 }
 
 type CompositeEndpointAddons interface {
-	AddCompositeEndpoints(*common.NSConfiguration) *[]endpoint.ChainedEndpoint
+	AddCompositeEndpoints(*common.NSConfiguration) *[]networkservice.NetworkServiceServer
 }
 
 // NewProcessEndpoints returns a new ProcessInitCommands struct
@@ -58,9 +59,14 @@ func NewProcessEndpoints(backend UniversalCNFBackend, endpoints []*Endpoint, ceA
 		}
 
 		// Build the list of composites
-		compositeEndpoints := []endpoint.ChainedEndpoint{
+		compositeEndpoints := []networkservice.NetworkServiceServer{
 			endpoint.NewMonitorEndpoint(configuration),
-			NewUniversalCNFEndpoint(backend, e),
+			endpoint.NewConnectionEndpoint(configuration),
+		}
+		// Invoke any additional composite endpoint constructors via the add-on interface
+		addCompositeEndpoints := ceAddons.AddCompositeEndpoints(configuration)
+		if addCompositeEndpoints != nil {
+			compositeEndpoints = append(compositeEndpoints, *addCompositeEndpoints...)
 		}
 
 		if e.Ipam != nil {
@@ -75,20 +81,16 @@ func NewProcessEndpoints(backend UniversalCNFBackend, endpoints []*Endpoint, ceA
 				compositeEndpoints = append(compositeEndpoints, endpoint.NewCustomFuncEndpoint("route", routeAddr))
 			}
 		}
-		// Invoke any additional composite endpoint constructors via the add-on interface
-		addCompositeEndpoints := ceAddons.AddCompositeEndpoints(configuration)
-		if addCompositeEndpoints != nil {
-			compositeEndpoints = append(compositeEndpoints, *addCompositeEndpoints...)
-		}
 
-		compositeEndpoints = append(compositeEndpoints, endpoint.NewConnectionEndpoint(configuration))
+		compositeEndpoints = append(compositeEndpoints,
+			NewUniversalCNFEndpoint(backend, e))
 
 		// Compose the Endpoint
 		composite := endpoint.NewCompositeEndpoint(compositeEndpoints...)
 
 		result.Endpoints = append(result.Endpoints, &SingleEndpoint{
 			NSConfiguration: configuration,
-			NSComposite:     composite,
+			NSComposite:     &composite,
 			Endpoint:        e,
 		})
 
@@ -100,7 +102,7 @@ func NewProcessEndpoints(backend UniversalCNFBackend, endpoints []*Endpoint, ceA
 func (pe *ProcessEndpoints) Process() error {
 
 	for _, e := range pe.Endpoints {
-		nsEndpoint, err := endpoint.NewNSMEndpoint(context.TODO(), e.NSConfiguration, e.NSComposite)
+		nsEndpoint, err := endpoint.NewNSMEndpoint(context.TODO(), e.NSConfiguration, *e.NSComposite)
 		if err != nil {
 			logrus.Fatalf("%v", err)
 			return err

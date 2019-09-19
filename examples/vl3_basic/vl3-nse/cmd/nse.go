@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/ucnf"
 	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/vppagent"
+	"github.com/networkservicemesh/networkservicemesh/controlplane/pkg/apis/local/networkservice"
 	"github.com/networkservicemesh/networkservicemesh/pkg/tools"
 	"github.com/networkservicemesh/networkservicemesh/sdk/common"
 	"github.com/networkservicemesh/networkservicemesh/sdk/endpoint"
@@ -47,7 +48,7 @@ func (mf *Flags) Process() {
 
 type vL3CompositeEndpoint string
 
-func (vL3ce vL3CompositeEndpoint) AddCompositeEndpoints(nsConfig *common.NSConfiguration) *[]endpoint.ChainedEndpoint {
+func (vL3ce vL3CompositeEndpoint) AddCompositeEndpoints(nsConfig *common.NSConfiguration) *[]networkservice.NetworkServiceServer {
 	nsPodIp, ok := os.LookupEnv("NSE_POD_IP")
 	if !ok {
 		nsPodIp = "2.2.20.0" // needs to be set to make sense
@@ -79,9 +80,9 @@ func (vL3ce vL3CompositeEndpoint) AddCompositeEndpoints(nsConfig *common.NSConfi
 	ipamEp := endpoint.NewIpamEndpoint(&common.NSConfiguration{
 		IPAddress: prefixPool,
 	})
-	compositeEndpoints := []endpoint.ChainedEndpoint{
-		newVL3ConnectComposite(nsConfig, prefixPool, &vppagent.UniversalCNFVPPAgentBackend{}),
+	compositeEndpoints := []networkservice.NetworkServiceServer{
 		ipamEp,
+		newVL3ConnectComposite(nsConfig, prefixPool, &vppagent.UniversalCNFVPPAgentBackend{}),
 	}
 
 	return &compositeEndpoints

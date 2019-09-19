@@ -50,7 +50,7 @@ type vL3NsePeer struct {
 
 type vL3ConnectComposite struct {
 	sync.RWMutex
-	endpoint.BaseCompositeEndpoint
+	//endpoint.BaseCompositeEndpoint
 	myEndpointName string
 	nsConfig *common.NSConfiguration
 	ipamCidr string
@@ -149,21 +149,18 @@ func (vxc *vL3ConnectComposite) Request(ctx context.Context,
 		"endpointName": request.GetConnection().GetNetworkServiceEndpointName(),
 		"networkServiceManagerName": request.GetConnection().GetSourceNetworkServiceManagerName(),
 	}).Infof("vL3ConnectComposite Request handler")
-	if vxc.GetNext() == nil {
-		logrus.Fatal("Should have Next set")
-	}
-
+	//var err error
 	/* NOTE: for IPAM we assume there's no IPAM endpoint in the composite endpoint list */
 	/* -we are taking care of that here in this handler */
-	incoming, err := vxc.GetNext().Request(ctx, request)
+	/*incoming, err := vxc.GetNext().Request(ctx, request)
 	if err != nil {
 		logrus.Error(err)
 		return nil, err
-	}
+	}*/
 
 	if vl3SrcEndpointName, ok := request.GetConnection().GetLabels()[LABEL_NSESOURCE]; ok {
 		// request is from another vl3 NSE
-		err = vxc.processPeerRequest(vl3SrcEndpointName, request, incoming)
+		_ = vxc.processPeerRequest(vl3SrcEndpointName, request, request.Connection)
 
 	} else {
 		vxc.SetMyNseName(request)
@@ -175,7 +172,7 @@ func (vxc *vL3ConnectComposite) Request(ctx context.Context,
 			nscVL3Route := connectioncontext.Route{
 				Prefix:               vxc.nsConfig.IPAddress,
 			}
-			incoming.Context.IpContext.DstRoutes = append(incoming.Context.IpContext.DstRoutes, &nscVL3Route)
+			request.Connection.Context.IpContext.DstRoutes = append(request.Connection.Context.IpContext.DstRoutes, &nscVL3Route)
 
 			/* Find all NSEs registered as the same type as this one */
 			req := &registry.FindNetworkServiceRequest{
@@ -192,16 +189,19 @@ func (vxc *vL3ConnectComposite) Request(ctx context.Context,
 		}
 	}
 	logrus.Infof("vL3ConnectComposite request done")
-	return incoming, nil
+	//return incoming, nil
+	if endpoint.Next(ctx) != nil {
+		return endpoint.Next(ctx).Request(ctx, request)
+	}
+	return request.GetConnection(), nil
 }
 
 func (vxc *vL3ConnectComposite) Close(ctx context.Context, conn *connection.Connection) (*empty.Empty, error) {
 	// remove from connections
-
-	if vxc.GetNext() != nil {
-		vxc.GetNext().Close(ctx, conn)
+	// TODO: should we be removing all peer connections here or no?
+	if endpoint.Next(ctx) != nil {
+		return endpoint.Next(ctx).Close(ctx, conn)
 	}
-
 	return &empty.Empty{}, nil
 }
 
@@ -215,21 +215,21 @@ func (vxc *vL3ConnectComposite) processNsEndpoints(ctx context.Context, response
 	   - do we need to match the name portion?  labels?
 	*/
 	for _, vl3endpoint := range response.GetNetworkServiceEndpoints() {
-		if vl3endpoint.GetEndpointName() != vxc.GetMyNseName() {
+		if vl3endpoint.GetName() != vxc.GetMyNseName() {
 			logrus.Infof("Found vL3 service %s peer %s", vl3endpoint.NetworkServiceName,
-				vl3endpoint.GetEndpointName())
-			peer := vxc.addPeer(vl3endpoint.GetEndpointName(), vl3endpoint.NetworkServiceManagerName)
+				vl3endpoint.GetName())
+			peer := vxc.addPeer(vl3endpoint.GetName(), vl3endpoint.NetworkServiceManagerName)
 			peer.Lock()
 			//peer.excludedPrefixes = removeDuplicates(append(peer.excludedPrefixes, incoming.Context.IpContext.ExcludedPrefixes...))
 			err := vxc.ConnectPeerEndpoint(ctx, peer)
 			if err != nil {
 				logrus.WithFields(logrus.Fields{
-					"peerEndpoint": vl3endpoint.GetEndpointName(),
+					"peerEndpoint": vl3endpoint.GetName(),
 				}).Errorf("Failed to connect to vL3 Peer")
 			} else {
 				if peer.connHdl != nil {
 					logrus.WithFields(logrus.Fields{
-						"peerEndpoint":         vl3endpoint.GetEndpointName(),
+						"peerEndpoint":         vl3endpoint.GetName(),
 						"srcIP":                peer.connHdl.Context.IpContext.SrcIpAddr,
 						"ConnExcludedPrefixes": peer.connHdl.Context.IpContext.ExcludedPrefixes,
 						"peerExcludedPrefixes": peer.excludedPrefixes,
@@ -237,7 +237,7 @@ func (vxc *vL3ConnectComposite) processNsEndpoints(ctx context.Context, response
 					}).Infof("Connected to vL3 Peer")
 				} else {
 					logrus.WithFields(logrus.Fields{
-						"peerEndpoint":         vl3endpoint.GetEndpointName(),
+						"peerEndpoint":         vl3endpoint.GetName(),
 						"peerExcludedPrefixes": peer.excludedPrefixes,
 					}).Infof("Connected to vL3 Peer but connhdl == nil")
 				}
@@ -245,7 +245,7 @@ func (vxc *vL3ConnectComposite) processNsEndpoints(ctx context.Context, response
 			peer.Unlock()
 		} else {
 			logrus.Infof("Found my vL3 service %s instance endpoint name: %s", vl3endpoint.NetworkServiceName,
-				vl3endpoint.GetEndpointName())
+				vl3endpoint.GetName())
 		}
 	}
 	return nil
@@ -290,7 +290,7 @@ func (vxc *vL3ConnectComposite) performPeerConnectRequest(ctx context.Context, p
 	/* expected to be called with peer.Lock() */
     ifName := peer.endpointName
 	vxc.nsmClient.OutgoingNscLabels[LABEL_NSESOURCE] = vxc.GetMyNseName()
-	conn, err := vxc.nsmClient.ConnectToEndpoint(peer.endpointName, peer.networkServiceManagerName, ifName, "mem", "VPP interface "+ifName, routes)
+	conn, err := vxc.nsmClient.ConnectToEndpoint(ctx, peer.endpointName, peer.networkServiceManagerName, ifName, "mem", "VPP interface "+ifName, routes)
 	if err != nil {
 		logrus.Errorf("Error creating %s: %v", ifName, err)
 		return nil, err

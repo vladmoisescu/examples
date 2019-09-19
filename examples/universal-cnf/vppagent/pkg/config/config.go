@@ -16,6 +16,7 @@
 package config
 
 import (
+	"context"
 	"io/ioutil"
 	"os/exec"
 
@@ -43,7 +44,7 @@ type Client struct {
 
 func (c *Client) Process(backend UniversalCNFBackend, dpconfig interface{}, nsmclient *client.NsmClient) error {
 
-	conn, err := nsmclient.Connect(c.IfName, "mem", "VPP interface "+c.IfName)
+	conn, err := nsmclient.Connect(context.TODO(), c.IfName, "mem", "VPP interface "+c.IfName)
 	if err != nil {
 		logrus.Errorf("Error creating %s: %v", c.IfName, err)
 		return err
