@@ -5,7 +5,7 @@ spec:
   selector:
     matchLabels:
       networkservicemesh.io/app: "vl3-client"
-  replicas: 3
+  replicas: 1
   template:
     metadata:
       labels:

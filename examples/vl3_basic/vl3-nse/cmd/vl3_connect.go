@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	NSREGISTRY_ADDR  = "nsmmgr.nsm-system"
+	NSREGISTRY_ADDR  = "nsmgr.nsm-system"
 	NSREGISTRY_PORT = "5000"
 	NSCLIENT_PORT = "5001"
 	LABEL_NSESOURCE = "vl3Nse/nseSource/endpointName"
@@ -410,7 +410,11 @@ func newVL3ConnectComposite(configuration *common.NSConfiguration, ipamCidr stri
 	} else {
 		logrus.Infof("newVL3ConnectComposite socket operation ok... create networkDiscoveryClient")
 		nsDiscoveryClient = registry.NewNetworkServiceDiscoveryClient(nsRegGrpcClient)
-		logrus.Infof("newVL3ConnectComposite networkDiscoveryClient ok")
+		if nsDiscoveryClient == nil {
+			logrus.Errorf("newVL3ConnectComposite networkDiscoveryClient nil")
+		} else {
+			logrus.Infof("newVL3ConnectComposite networkDiscoveryClient ok")
+		}
 	}
 
 	// create remote_networkservice API connection
