@@ -34,9 +34,10 @@ performs the following:
 ```bash
 $ git clone https://github.com/tiswanso/networkservicemesh
 $ cd networkservicemesh
-$ git checkout local_conn_new
-$helm template deployments/helm/nsm --namespace nsm-system --set global.JaegerTracing=true --set global.NSRegistrySvc=true --set org=tiswanso,tag=local_conn_new --set pullPolicy=Always | kubectl apply -f -
-$ helm template deployments/helm/nsm-monitoring --namespace nsm-system --set monSvcType=NodePort --set org=tiswanso,tag=local_conn_new | kubectl apply -f
+$ git checkout vl3_interdomain
+$ helm template deployments/helm/nsm-monitoring --namespace nsm-system --set monSvcType=NodePort --set org=tiswanso,tag=vl3-inter-domain | kubectl apply -f
+$ kubednsip=$(kubectl get svc -n kube-system | grep kube-dns | awk '{ print $3 }')
+$ helm template deployments/helm/nsm --namespace nsm-system --set global.JaegerTracing=true --set org=tiswanso --set tag=vl3-inter-domain --set pullPolicy=Always --set admission-webhook.org=tiswanso --set admission-webhook.tag=vl3-inter-domain --set admission-webhook.pullPolicy=Always --set global.NSRegistrySvc=true --set global.NSMApiSvc=true --set global.NSMApiSvcPort=30501 --set global.NSMApiSvcAddr="0.0.0.0:30501" --set global.NSMApiSvcType=NodePort --set global.ExtraDnsServers=${kubednsip} | kubectl apply -f -
 ```
 
 ### Usage
