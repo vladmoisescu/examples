@@ -27,6 +27,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"net"
 	"os"
+	"strings"
 )
 const (
 	defaultConfigPath = "/etc/universal-cnf/config.yaml"
@@ -80,9 +81,15 @@ func (vL3ce vL3CompositeEndpoint) AddCompositeEndpoints(nsConfig *common.NSConfi
 	ipamEp := endpoint.NewIpamEndpoint(&common.NSConfiguration{
 		IPAddress: prefixPool,
 	})
+
+	var nsRemoteIpList []string
+	nsRemoteIpListStr, ok := os.LookupEnv("NSM_REMOTE_NS_IP_LIST")
+	if ok {
+		nsRemoteIpList = strings.Split(nsRemoteIpListStr, ",")
+	}
 	compositeEndpoints := []networkservice.NetworkServiceServer{
 		ipamEp,
-		newVL3ConnectComposite(nsConfig, prefixPool, &vppagent.UniversalCNFVPPAgentBackend{}),
+		newVL3ConnectComposite(nsConfig, prefixPool, &vppagent.UniversalCNFVPPAgentBackend{}, nsRemoteIpList),
 	}
 
 	return &compositeEndpoints

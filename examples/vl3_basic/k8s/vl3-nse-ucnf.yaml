@@ -39,6 +39,11 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: NSM_REMOTE_NS_IP_LIST
+              valueFrom:
+                configMapKeyRef:
+                  name: nsm-vl3
+                  key: remote.ip_list
           securityContext:
             capabilities:
               add:
