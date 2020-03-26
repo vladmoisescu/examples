@@ -85,7 +85,11 @@ data:
     endpoints:
     - name: {{ .Values.nsm.serviceName | quote }}
       labels:
-        app: vl3-nse
+        app: "vl3-nse-{{ .Values.nsm.serviceName }}"
+{{- if .Values.cnns.nsr.addr }}
+        cnns/nsr.addr: {{ .Values.cnns.nsr.addr | quote }}
+        cnns/nsr.port: {{ .Values.cnns.nsr.port | quote }}
+{{- end }}
       cnns:
         name: {{ .Values.nsm.serviceName | quote }}
         address: "{{ .Values.cnns.nsr.addr }}:{{ .Values.cnns.nsr.port }}"
