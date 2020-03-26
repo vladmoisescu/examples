@@ -24,14 +24,14 @@ import (
 	"strings"
 
 	"github.com/danielvladco/k8s-vnet/pkg/nseconfig"
-	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/config"
-	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/vppagent"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/api/networkservice"
 	"github.com/networkservicemesh/networkservicemesh/pkg/tools"
 	"github.com/networkservicemesh/networkservicemesh/sdk/common"
 	"github.com/networkservicemesh/networkservicemesh/sdk/endpoint"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
+
+	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/ucnf"
+	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/vppagent"
 )
 
 const (
@@ -130,32 +130,7 @@ func main() {
 	mainFlags := &Flags{}
 	mainFlags.Process()
 
-	cnfConfig := &nseconfig.Config{}
-	f, err := os.Open(mainFlags.ConfigPath)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	err = nseconfig.NewConfig(yaml.NewDecoder(f), cnfConfig)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	configuration := common.FromEnv()
-
-	backend := &vppagent.UniversalCNFVPPAgentBackend{}
-	if err := backend.NewUniversalCNFBackend(); err != nil {
-		logrus.Fatal(err)
-	}
-
-	pe := config.NewProcessEndpoints(backend, cnfConfig.Endpoints, configuration, CompositeEndpointPlugin)
-
-	logrus.Infof("Starting endpoints")
-	// defer pe.Cleanup()
-
-	if err := pe.Process(); err != nil {
-		logrus.Fatalf("Error processing the new endpoints: %v", err)
-	}
-
-	defer pe.Cleanup()
+	ucnfNse := ucnf.NewUcnfNse(mainFlags.ConfigPath, mainFlags.Verify, &vppagent.UniversalCNFVPPAgentBackend{}, CompositeEndpointPlugin)
+	defer ucnfNse.Cleanup()
 	<-c
 }
