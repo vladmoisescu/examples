@@ -85,12 +85,12 @@ data:
     endpoints:
     - name: {{ .Values.nsm.serviceName | quote }}
       labels:
-        app: "vl3-nse-{{ .Values.nsm.serviceName }}"
-{{- if .Values.cnns.nsr.addr }}
-        cnns/nsr.addr: {{ .Values.cnns.nsr.addr | quote }}
-        cnns/nsr.port: {{ .Values.cnns.nsr.port | quote }}
-{{- end }}
-      ipam:
-        prefixpool: {{ .Values.ipam.prefixPool | quote }}
-        routes: []
-      ifname: "endpoint0"
+        app: vl3-nse
+      cnns:
+        name: {{ .Values.nsm.serviceName | quote }}
+        address: "{{ .Values.cnns.nsr.addr }}:{{ .Values.cnns.nsr.port }}"
+      vl3:
+       ipam:
+          prefixpool: {{ .Values.ipam.prefixPool | quote }}
+          routes: []
+       ifname: "endpoint0"

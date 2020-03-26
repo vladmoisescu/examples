@@ -18,7 +18,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/ucnf"
+	"net"
+	"os"
+	"strconv"
+	"strings"
+
+	"github.com/danielvladco/k8s-vnet/pkg/nseconfig"
 	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/config"
 	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/vppagent"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/api/networkservice"
@@ -26,13 +31,11 @@ import (
 	"github.com/networkservicemesh/networkservicemesh/sdk/common"
 	"github.com/networkservicemesh/networkservicemesh/sdk/endpoint"
 	"github.com/sirupsen/logrus"
-	"net"
-	"os"
-	"strconv"
-	"strings"
+	"gopkg.in/yaml.v2"
 )
+
 const (
-	defaultConfigPath = "/etc/universal-cnf/config.yaml"
+	defaultConfigPath   = "/etc/universal-cnf/config.yaml"
 	defaultPluginModule = ""
 )
 
@@ -42,7 +45,7 @@ type Flags struct {
 	Verify     bool
 }
 
-type fnGetNseName func () string
+type fnGetNseName func() string
 
 // Process will parse the command line flags and init the structure members
 func (mf *Flags) Process() {
@@ -53,7 +56,7 @@ func (mf *Flags) Process() {
 
 type vL3CompositeEndpoint string
 
-func (vL3ce vL3CompositeEndpoint) AddCompositeEndpoints(nsConfig *common.NSConfiguration, ucnfEndpoint *config.Endpoint) *[]networkservice.NetworkServiceServer {
+func (vL3ce vL3CompositeEndpoint) AddCompositeEndpoints(nsConfig *common.NSConfiguration, ucnfEndpoint *nseconfig.Endpoint) *[]networkservice.NetworkServiceServer {
 	nsPodIp, ok := os.LookupEnv("NSE_POD_IP")
 	if !ok {
 		nsPodIp = "2.2.20.0" // needs to be set to make sense
@@ -90,8 +93,8 @@ func (vL3ce vL3CompositeEndpoint) AddCompositeEndpoints(nsConfig *common.NSConfi
 			0)
 	}
 	logrus.WithFields(logrus.Fields{
-		"prefixPool": prefixPool,
-		"nsPodIP": nsPodIp,
+		"prefixPool":         prefixPool,
+		"nsPodIP":            nsPodIp,
 		"nsConfig.IPAddress": nsConfig.IPAddress,
 	}).Infof("Creating vL3 IPAM endpoint")
 	ipamEp := endpoint.NewIpamEndpoint(&common.NSConfiguration{
@@ -106,7 +109,7 @@ func (vL3ce vL3CompositeEndpoint) AddCompositeEndpoints(nsConfig *common.NSConfi
 	compositeEndpoints := []networkservice.NetworkServiceServer{
 		ipamEp,
 		newVL3ConnectComposite(nsConfig, prefixPool,
-			&vppagent.UniversalCNFVPPAgentBackend{}, nsRemoteIpList, func () string {
+			&vppagent.UniversalCNFVPPAgentBackend{}, nsRemoteIpList, func() string {
 				return ucnfEndpoint.NseName
 			}),
 	}
@@ -115,7 +118,7 @@ func (vL3ce vL3CompositeEndpoint) AddCompositeEndpoints(nsConfig *common.NSConfi
 }
 
 // exported the symbol named "CompositeEndpointPlugin"
-var  CompositeEndpointPlugin vL3CompositeEndpoint
+var CompositeEndpointPlugin vL3CompositeEndpoint
 
 func main() {
 	// Capture signals to cleanup before exiting
@@ -127,44 +130,32 @@ func main() {
 	mainFlags := &Flags{}
 	mainFlags.Process()
 
-	//var defCEAddon defaultCompositeEndpointAddon
-	ucnfNse := ucnf.NewUcnfNse(mainFlags.ConfigPath, mainFlags.Verify, &vppagent.UniversalCNFVPPAgentBackend{}, CompositeEndpointPlugin)
-
-	defer ucnfNse.Cleanup()
-	<-c
-}
-
-/*
-var (
-	nsmEndpoint *endpoint.NsmEndpoint
-)
-
-func main() {
-
-	// Capture signals to cleanup before exiting
-	c := tools.NewOSSignalChannel()
-
-	composite := endpoint.NewCompositeEndpoint(
-		endpoint.NewMonitorEndpoint(nil),
-		endpoint.NewIpamEndpoint(nil),
-		newVL3ConnectComposite(nil),
-		endpoint.NewConnectionEndpoint(nil))
-
-	nsme, err := endpoint.NewNSMEndpoint(context.TODO(), nil, composite)
+	cnfConfig := &nseconfig.Config{}
+	f, err := os.Open(mainFlags.ConfigPath)
 	if err != nil {
-		logrus.Fatalf("%v", err)
+		logrus.Fatal(err)
 	}
-	nsmEndpoint = nsme
-	_ = nsmEndpoint.Start()
-	logrus.Infof("Started NSE --got name %s", nsmEndpoint.GetName())
-	defer func() { _ = nsmEndpoint.Delete() }()
+	err = nseconfig.NewConfig(yaml.NewDecoder(f), cnfConfig)
+	if err != nil {
+		logrus.Fatal(err)
+	}
 
-	// Capture signals to cleanup before exiting
+	configuration := common.FromEnv()
+
+	backend := &vppagent.UniversalCNFVPPAgentBackend{}
+	if err := backend.NewUniversalCNFBackend(); err != nil {
+		logrus.Fatal(err)
+	}
+
+	pe := config.NewProcessEndpoints(backend, cnfConfig.Endpoints, configuration, CompositeEndpointPlugin)
+
+	logrus.Infof("Starting endpoints")
+	// defer pe.Cleanup()
+
+	if err := pe.Process(); err != nil {
+		logrus.Fatalf("Error processing the new endpoints: %v", err)
+	}
+
+	defer pe.Cleanup()
 	<-c
 }
-
-func GetMyNseName() string {
-	return nsmEndpoint.GetName()
-}
-
- */
