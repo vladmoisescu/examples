@@ -57,7 +57,7 @@ for i in "$@"; do
             NOWAIT=true
             ;;
         *)
-            usage
+            print_usage
             exit 1
             ;;
     esac

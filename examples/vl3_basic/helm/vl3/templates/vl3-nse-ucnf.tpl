@@ -46,6 +46,8 @@ spec:
               value: "nsmgr.nsm-system"
             - name: NSREGISTRY_PORT
               value: "5000"
+            - name: IPAM_ADDRESS
+              value: "ipam.cnns-cisco.com:50051"
             - name: NSE_POD_IP
               valueFrom:
                 fieldRef:

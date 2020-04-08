@@ -24,6 +24,7 @@ func NewUcnfNse(configPath string, verify bool, backend config.UniversalCNFBacke
 	if err != nil {
 		logrus.Fatal(err)
 	}
+	defer func() { _ = f.Close() }()
 	err = nseconfig.NewConfig(yaml.NewDecoder(f), cnfConfig)
 	if err != nil {
 		logrus.Fatal(err)
