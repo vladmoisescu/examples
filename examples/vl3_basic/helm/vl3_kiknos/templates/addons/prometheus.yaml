@@ -1,0 +1,65 @@
+{{- if .Values.addons.prometheus.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.10.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9090
+              protocol: TCP
+          volumeMounts:
+            - mountPath: "/etc/prometheus"
+              name: prometheus-config
+      volumes:
+        - name: prometheus-config
+          configMap:
+            name: prometheus-cfg
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-cfg
+  namespace: default
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+    scrape_configs:
+      - job_name: 'kiknos-stats'
+        scrape_interval: 5s
+        static_configs:
+          {{- if eq .Values.scenario "aio" }}
+          - targets: ['kiknos-prometheus:9191']
+          {{- else }}
+          - targets: ['esp-prometheus:9191','ike-prometheus:9191']
+          {{- end }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: default
+spec:
+  type: NodePort
+  ports:
+    - port: 9090
+      nodePort: 30002
+  selector:
+    app: prometheus
+{{- end }}

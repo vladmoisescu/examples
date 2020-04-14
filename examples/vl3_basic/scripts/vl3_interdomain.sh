@@ -99,7 +99,7 @@ fi
 
 echo "---------------Install NSE-------------"
 # ${KUBEINSTALL} -f ${VL3_NSEMFST}
-helm template ${VL3HELMDIR}/vl3 --set org=${NSE_HUB} --set tag=${NSE_TAG} --set pullPolicy=${PULLPOLICY} ${IPAMPOOL:+ --set ipam.prefixPool=${IPAMPOOL}} ${IPAMOCTET:+ --set ipam.uniqueOctet=${IPAMOCTET}} ${CNNS_NSRADDR:+ --set cnns.nsr.addr=${CNNS_NSRADDR}} ${CNNS_NSRPORT:+ --set cnns.nsr.port=${CNNS_NSRPORT}} --set nsm.serviceName=${SERVICENAME} | kubectl ${INSTALL_OP} ${KCONF:+--kubeconfig $KCONF} -f -
+helm template ${VL3HELMDIR}/vl3_kiknos --set org=${NSE_HUB} --set tag=${NSE_TAG} --set pullPolicy=${PULLPOLICY} ${IPAMPOOL:+ --set ipam.prefixPool=${IPAMPOOL}} ${IPAMOCTET:+ --set ipam.uniqueOctet=${IPAMOCTET}} ${CNNS_NSRADDR:+ --set cnns.nsr.addr=${CNNS_NSRADDR}} ${CNNS_NSRPORT:+ --set cnns.nsr.port=${CNNS_NSRPORT}} --set nsm.serviceName=${SERVICENAME} | kubectl ${INSTALL_OP} ${KCONF:+--kubeconfig $KCONF} -f -
 
 if [[ "$INSTALL_OP" != "delete" ]]; then
   sleep 20

@@ -1,0 +1,15 @@
+{{- range .Values.addons.iperfPods }}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ . }}
+spec:
+  containers:
+    - name: {{ . }}
+      image: ciscolabs/iperf
+      imagePullPolicy: IfNotPresent
+      env:
+        - name: MICROSERVICE_LABEL
+          value: {{ . }}
+{{- end }}

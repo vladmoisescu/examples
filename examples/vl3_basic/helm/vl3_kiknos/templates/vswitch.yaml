@@ -1,0 +1,179 @@
+{{- if not .Values.vswitch.useExternalVswitch }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: vpp-vswitch
+  labels:
+    k8s-app: vpp-vswitch
+spec:
+  selector:
+    matchLabels:
+      k8s-app: vpp-vswitch
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        k8s-app: vpp-vswitch
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+      tolerations:
+        - key: ''
+          operator: Exists
+          effect: ''
+        - key: CriticalAddonsOnly
+          operator: Exists
+      hostNetwork: true
+      hostPID: true
+      containers:
+        - name: vpp-vswitch
+          image: {{ .Values.vswitch.image.repository }}:{{ .Values.vswitch.image.tag }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          env:
+            - name: MICROSERVICE_LABEL
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: agent-config
+              mountPath: /opt/vpp-agent/dev
+            - name: vpp-config
+              mountPath: /etc/vpp/vpp.conf
+              subPath: vpp.conf
+            - name: memif-sockets
+              mountPath: {{ .Values.vswitch.memifSocketDir }}
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
+            {{- if .Values.etcd.secureTransport }}
+            - name: etcd-secrets
+              mountPath: /var/etcd/secrets
+            {{- end }}
+            {{- if .Values.vswitch.http.secureTransport }}
+            - name: http-secrets
+              mountPath: /var/http/secrets
+            {{- end }}
+          {{- if .Values.vswitch.dpdk.enabled }}
+          resources:
+            limits:
+              hugepages-2Mi: 512Mi
+              memory: 512Mi
+          {{- end }}
+      volumes:
+        - name: agent-config
+          configMap:
+            name: vswitch-agent-cfg
+        - name: vpp-config
+          configMap:
+            name: vswitch-vpp-cfg
+        - name: memif-sockets
+          hostPath:
+            path: {{ .Values.vswitch.memifSocketDir }}
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+        {{- if .Values.etcd.secureTransport }}
+        - name: etcd-secrets
+          secret:
+            secretName: {{ .Values.etcd.secrets.secretName }}
+        {{- end }}
+        {{- if .Values.vswitch.http.secureTransport }}
+        - name: http-secrets
+          secret:
+            secretName: {{ .Values.vswitch.http.secrets.secretName }}
+        {{- end }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vswitch-agent-cfg
+data:
+  etcd.conf: |
+    endpoints:
+      {{- if .Values.etcd.useExternalEtcd }}
+      - "{{ .Values.etcd.externalEtcdEndpoint }}"
+      {{- else }}
+      - 127.0.0.1:32379
+      {{- end }}
+    {{- if .Values.etcd.secureTransport }}
+    ca-file: /var/etcd/secrets/{{ .Values.etcd.secrets.caCertFile }}
+    cert-file: /var/etcd/secrets/{{ .Values.etcd.secrets.clientCertFile }}
+    key-file: /var/etcd/secrets/{{ .Values.etcd.secrets.clientKeyFile }}
+    insecure-transport: false
+    {{- else }}
+    insecure-transport: true
+    {{- end }}
+    dial-timeout: 10000000000
+    allow-delayed-start: true
+  http.conf: |
+    endpoint: 0.0.0.0:9991
+    {{- if .Values.vswitch.http.secureTransport }}
+    server-cert-file: /var/http/secrets/{{ .Values.vswitch.http.secrets.serverCertFile }}
+    server-key-file: /var/http/secrets/{{ .Values.vswitch.http.secrets.serverKeyFile }}
+    client-basic-auth:
+      - {{ .Values.vswitch.http.secrets.basicAuth | quote }}
+    {{- end }}
+  supervisor.conf: |
+    programs:
+      - name: "vpp"
+        executable-path: "/usr/bin/vpp"
+        executable-args: ["-c", "/etc/vpp/vpp.conf"]
+      - name: "agent"
+        executable-path: "/bin/vpp-agent"
+        executable-args: ["--config-dir=/opt/vpp-agent/dev"]
+    hooks:
+      - cmd: "/usr/bin/init_hook.sh"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vswitch-vpp-cfg
+data:
+  vpp.conf: |
+    unix {
+      nodaemon
+      cli-listen /run/vpp/cli.sock
+      cli-no-pager
+    }
+    socksvr {
+      default
+    }
+    statseg {
+      default
+    }
+    {{- if .Values.vswitch.dpdk.enabled }}
+    dpdk {
+      {{- range .Values.vswitch.dpdk.pciDevices }}
+      dev {{ . }}
+      {{- end }}
+    }
+    {{- else }}
+    plugins {
+      plugin dpdk_plugin.so {
+        disable
+      }
+    }
+    {{- end }}
+
+{{- if and .Values.vswitch.http.secureTransport .Values.vswitch.http.secrets.loadFromFiles }}
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: {{ .Values.vswitch.http.secrets.secretName }}
+data:
+  {{ .Values.vswitch.http.secrets.caCertFile }}: |-
+    {{ .Files.Get (printf "secrets/%s" .Values.vswitch.http.secrets.caCertFile) | b64enc }}
+  {{ .Values.vswitch.http.secrets.serverCertFile }}: |-
+    {{ .Files.Get (printf "secrets/%s" .Values.vswitch.http.secrets.serverCertFile) | b64enc }}
+  {{ .Values.vswitch.http.secrets.serverKeyFile }}: |-
+    {{ .Files.Get (printf "secrets/%s" .Values.vswitch.http.secrets.serverKeyFile) | b64enc }}
+{{- end }}
+
+{{- end }}

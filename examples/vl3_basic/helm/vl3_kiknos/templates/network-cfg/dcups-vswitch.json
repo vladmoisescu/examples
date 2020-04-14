@@ -1,0 +1,68 @@
+{{- define "network-cfg.dcups-vswitch" -}}
+# VSwitch memifs
+config/vpp/v2/interfaces/IF_MEMIF_VSWITCH_dcups-esp_black {"name":"IF_MEMIF_VSWITCH_dcups-esp_black","type":"MEMIF","enabled":true,"mtu":1500,"rx_modes":[{"mode":"ADAPTIVE"}],"memif":{"master":true,"id":2,"socket_filename":"/var/run/contiv/memif_ts1-host4.sock"}}
+config/vpp/v2/interfaces/IF_MEMIF_VSWITCH_dcups-esp_red {"name":"IF_MEMIF_VSWITCH_dcups-esp_red","type":"MEMIF","enabled":true,"mtu":1500,"rx_modes":[{"mode":"ADAPTIVE"}],"memif":{"master":true,"id":1,"socket_filename":"/var/run/contiv/memif_ts1-host4.sock"}}
+#
+# Linux Taps
+{{- if eq ($.Values.ike.replicas|int) 1 }}
+config/linux/interfaces/v2/interface/IF_TAP_VNF_dcups-ike {"name":"IF_TAP_VNF_dcups-ike","type":"TAP_TO_VPP","namespace":{"type":"MICROSERVICE","reference":"ike"},"host_if_name":"ike","enabled":true,"ip_addresses":["{{ .Values.ike.network.redInterfaceIP }}/24"],"tap":{"vpp_tap_if_name":"IF_TAP_VSWITCH_dcups-ike"}}
+{{- else }}
+{{- range $i, $e := untilStep 1 ($.Values.ike.replicas|add 1|int) 1 }}
+config/linux/interfaces/v2/interface/IF_TAP_VNF_dcups-ike-{{ $e }} {"name":"IF_TAP_VNF_dcups-ike-{{ $e }}","type":"TAP_TO_VPP","namespace":{"type":"MICROSERVICE","reference":"ike-{{ $e }}"},"host_if_name":"ike","enabled":true,"ip_addresses":["{{ $.Values.ike.network.redInterfaceIPBase }}{{ $e }}/24"],"tap":{"vpp_tap_if_name":"IF_TAP_VSWITCH_dcups-ike-{{ $e }}"}}
+{{- end }}
+{{- end }}
+config/linux/interfaces/v2/interface/IF_TAP_VNF_ikester_black {"name":"IF_TAP_VNF_ikester_black","type":"TAP_TO_VPP","namespace":{"type":"MICROSERVICE","reference":"ikester"},"host_if_name":"black","enabled":true,"ip_addresses":["{{ .Values.ikester.network.blackInterfaceIP }}/24"],"phys_address":"02:00:00:00:00:03","mtu":1500,"tap":{"vpp_tap_if_name":"IF_TAP_VSWITCH_ikester_black"}}
+config/linux/interfaces/v2/interface/IF_TAP_VNF_ikester_red {"name":"IF_TAP_VNF_ikester_red","type":"TAP_TO_VPP","namespace":{"type":"MICROSERVICE","reference":"ikester"},"host_if_name":"red","enabled":true,"ip_addresses":["{{ .Values.ikester.network.redInterfaceIP }}/24"],"phys_address":"02:00:00:00:00:04","mtu":1500,"tap":{"vpp_tap_if_name":"IF_TAP_VSWITCH_ikester_red"}}
+config/linux/interfaces/v2/interface/IF_TAP_VNF_client1_port1 {"name":"IF_TAP_VNF_client1_port1","type":"TAP_TO_VPP","namespace":{"type":"MICROSERVICE","reference":"client1"},"host_if_name":"port1","enabled":true,"ip_addresses":["10.10.10.1/24"],"phys_address":"02:00:00:00:00:01","mtu":1500,"tap":{"vpp_tap_if_name":"IF_TAP_VSWITCH_client1_port1"}}
+config/linux/interfaces/v2/interface/IF_TAP_VNF_client2_port1 {"name":"IF_TAP_VNF_client2_port1","type":"TAP_TO_VPP","namespace":{"type":"MICROSERVICE","reference":"client2"},"host_if_name":"port1","enabled":true,"ip_addresses":["10.10.10.2/24"],"phys_address":"02:00:00:00:00:02","mtu":1500,"tap":{"vpp_tap_if_name":"IF_TAP_VSWITCH_client2_port1"}}
+config/linux/interfaces/v2/interface/IF_TAP_VNF_server_port1 {"name":"IF_TAP_VNF_server_port1","type":"TAP_TO_VPP","namespace":{"type":"MICROSERVICE","reference":"server"},"host_if_name":"port1","enabled":true,"ip_addresses":["10.10.20.1/24"],"phys_address":"02:00:00:00:00:08","mtu":1500,"tap":{"vpp_tap_if_name":"IF_TAP_VSWITCH_server_port1"}}
+config/linux/interfaces/v2/interface/IF_TAP_VNF_server_port2 {"name":"IF_TAP_VNF_server_port2","type":"TAP_TO_VPP","namespace":{"type":"MICROSERVICE","reference":"server"},"host_if_name":"port2","enabled":true,"ip_addresses":["10.10.30.1/24"],"phys_address":"02:00:00:00:00:09","mtu":1500,"tap":{"vpp_tap_if_name":"IF_TAP_VSWITCH_server_port2"}}
+#
+# VPP Taps
+{{- if eq ($.Values.ike.replicas|int) 1 }}
+config/vpp/v2/interfaces/IF_TAP_VSWITCH_dcups-ike {"name":"IF_TAP_VSWITCH_dcups-ike","type":"TAP","enabled":true,"mtu":1500,"rx_modes":[{"mode":"ADAPTIVE"}],"tap":{"version":2,"to_microservice":"ike"}}
+{{- else }}
+{{- range $i, $e := untilStep 1 ($.Values.ike.replicas|add 1|int) 1 }}
+config/vpp/v2/interfaces/IF_TAP_VSWITCH_dcups-ike-{{ $e }} {"name":"IF_TAP_VSWITCH_dcups-ike-{{ $e }}","type":"TAP","enabled":true,"mtu":1500,"rx_modes":[{"mode":"ADAPTIVE"}],"tap":{"version":2,"to_microservice":"ike-{{ $e }}"}}
+{{- end }}
+{{- end }}
+config/vpp/v2/interfaces/IF_TAP_VSWITCH_client1_port1 {"name":"IF_TAP_VSWITCH_client1_port1","type":"TAP","enabled":true,"mtu":1500,"rx_modes":[{"mode":"ADAPTIVE"}],"tap":{"version":2,"to_microservice":"client1"}}
+config/vpp/v2/interfaces/IF_TAP_VSWITCH_client2_port1 {"name":"IF_TAP_VSWITCH_client2_port1","type":"TAP","enabled":true,"mtu":1500,"rx_modes":[{"mode":"ADAPTIVE"}],"tap":{"version":2,"to_microservice":"client2"}}
+config/vpp/v2/interfaces/IF_TAP_VSWITCH_ikester_black {"name":"IF_TAP_VSWITCH_ikester_black","type":"TAP","enabled":true,"mtu":1500,"rx_modes":[{"mode":"ADAPTIVE"}],"tap":{"version":2,"to_microservice":"ikester"}}
+config/vpp/v2/interfaces/IF_TAP_VSWITCH_ikester_red {"name":"IF_TAP_VSWITCH_ikester_red","type":"TAP","enabled":true,"mtu":1500,"rx_modes":[{"mode":"ADAPTIVE"}],"tap":{"version":2,"to_microservice":"ikester"}}
+config/vpp/v2/interfaces/IF_TAP_VSWITCH_server_port1 {"name":"IF_TAP_VSWITCH_server_port1","type":"TAP","enabled":true,"mtu":1500,"rx_modes":[{"mode":"ADAPTIVE"}],"tap":{"version":2,"to_microservice":"server"}}
+config/vpp/v2/interfaces/IF_TAP_VSWITCH_server_port2 {"name":"IF_TAP_VSWITCH_server_port2","type":"TAP","enabled":true,"mtu":1500,"rx_modes":[{"mode":"ADAPTIVE"}],"tap":{"version":2,"to_microservice":"server"}}
+#
+# Bridge domains
+{{- if eq ($.Values.ike.replicas|int) 1 }}
+config/vpp/l2/v2/bridge-domain/BD_client-to-k1-to-dcups-to-server-service_CONN_2 {"name":"BD_client-to-k1-to-dcups-to-server-service_CONN_2","flood":true,"unknown_unicast_flood":true,"forward":true,"learn":true,"interfaces":[{"name":"IF_MEMIF_VSWITCH_dcups-esp_red"},{"name":"IF_TAP_VSWITCH_dcups-ike"},{"name":"IF_TAP_VSWITCH_ikester_red"}]}
+{{- else }}
+config/vpp/l2/v2/bridge-domain/BD_client-to-k1-to-dcups-to-server-service_CONN_2 {"name":"BD_client-to-k1-to-dcups-to-server-service_CONN_2","flood":true,"unknown_unicast_flood":true,"forward":true,"learn":true,"interfaces":[{"name":"IF_MEMIF_VSWITCH_dcups-esp_red"},{"name":"IF_TAP_VSWITCH_ikester_red"}
+{{- range $i, $e := untilStep 1 ($.Values.ike.replicas|add 1|int) 1 -}}
+,{"name":"IF_TAP_VSWITCH_dcups-ike-{{ $e }}"}
+{{- end -}}
+]}
+{{- end }}
+config/vpp/l2/v2/bridge-domain/BD_client-to-k1-to-dcups-to-server-service_CONN_1 {"name":"BD_client-to-k1-to-dcups-to-server-service_CONN_1","flood":true,"unknown_unicast_flood":true,"forward":true,"learn":true,"interfaces":[{"name":"IF_TAP_VSWITCH_client1_port1"},{"name":"IF_TAP_VSWITCH_client2_port1"},{"name":"IF_TAP_VSWITCH_ikester_black"}]}
+config/vpp/l2/v2/bridge-domain/BD_client-to-k1-to-dcups-to-server-service_CONN_3 {"name":"BD_client-to-k1-to-dcups-to-server-service_CONN_3","flood":true,"unknown_unicast_flood":true,"forward":true,"learn":true,"interfaces":[{"name":"IF_MEMIF_VSWITCH_dcups-esp_black"},{"name":"IF_TAP_VSWITCH_server_port1"},{"name":"IF_TAP_VSWITCH_server_port2"}]}
+#
+{{- if .Values.ikester.useRawSocket }}
+# Route towards ikester source IP subnet
+{{- if eq ($.Values.ike.replicas|int) 1 }}
+config/linux/l3/v2/route/200.0.0.0/8/IF_TAP_VNF_dcups-ike {"outgoing_interface":"IF_TAP_VNF_dcups-ike","scope":"GLOBAL","dst_network":"200.0.0.0/8","gw_addr":"100.100.100.101"}
+{{- else }}
+{{- range $i, $e := untilStep 1 ($.Values.ike.replicas|add 1|int) 1 }}
+config/linux/l3/v2/route/200.0.0.0/8/IF_TAP_VNF_dcups-ike-{{ $e }} {"outgoing_interface":"IF_TAP_VNF_dcups-ike-{{ $e }}","scope":"GLOBAL","dst_network":"200.0.0.0/8","gw_addr":"100.100.100.101"}
+{{- end }}
+{{- end }}
+{{- end }}
+#
+# Client/server route configuration
+config/linux/l3/v2/route/10.10.20.0/24/IF_TAP_VNF_client1_port1 {"outgoing_interface":"IF_TAP_VNF_client1_port1","scope":"LINK","dst_network":"10.10.20.0/24"}
+config/linux/l3/v2/route/10.10.30.0/24/IF_TAP_VNF_client2_port1 {"outgoing_interface":"IF_TAP_VNF_client2_port1","scope":"LINK","dst_network":"10.10.30.0/24"}
+config/linux/l3/v2/route/10.10.10.1/32/IF_TAP_VNF_server_port1 {"outgoing_interface":"IF_TAP_VNF_server_port1","scope":"LINK","dst_network":"10.10.10.1/32"}
+config/linux/l3/v2/route/10.10.10.2/32/IF_TAP_VNF_server_port2 {"outgoing_interface":"IF_TAP_VNF_server_port2","scope":"LINK","dst_network":"10.10.10.2/32"}
+#
+# Ikester ARP
+config/linux/l3/v2/arp/IF_TAP_VNF_ikester_red/{{ .Values.esp.network.redInterfaceIP }} {"interface":"IF_TAP_VNF_ikester_red","ip_address":"{{ .Values.esp.network.redInterfaceIP }}","hw_address":"02:00:00:00:00:05"}
+{{- end -}}

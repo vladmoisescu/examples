@@ -1,0 +1,4 @@
+{{- define "network-cfg.dcups-ike" -}}
+# IKE proxy interface
+config/ike/v1/ike-proxyintf/red {"name":"red", "ip_address":"{{ .Values.esp.network.redInterfaceIP }}"}
+{{- end -}}
