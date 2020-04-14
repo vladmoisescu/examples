@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	defaultVPPAgentEndpoint = "localhost:9113"
+	defaultVPPAgentEndpoint = "localhost:9111"
 )
 
 // ResetVppAgent resets the VPP instance settings to nil
