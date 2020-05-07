@@ -20,26 +20,29 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/danielvladco/k8s-vnet/pkg/nseconfig"
-	"github.com/dtornow/cnns-nsr/cnns-ipam/api/ipprovider"
-	"github.com/gofrs/uuid"
 	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/ucnf"
-	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/vppagent"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/api/networkservice"
-	"github.com/networkservicemesh/networkservicemesh/pkg/tools"
-	"github.com/networkservicemesh/networkservicemesh/sdk/common"
-	"github.com/networkservicemesh/networkservicemesh/sdk/endpoint"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"google.golang.org/grpc"
+
+	"github.com/danielvladco/k8s-vnet/pkg/nseconfig"
+	"github.com/dtornow/cnns-nsr/cnns-ipam/api/ipprovider"
+	"github.com/gofrs/uuid"
+	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/vppagent"
+	"github.com/networkservicemesh/networkservicemesh/pkg/tools"
+	"github.com/networkservicemesh/networkservicemesh/sdk/common"
+	"github.com/networkservicemesh/networkservicemesh/sdk/endpoint"
+	"github.com/sirupsen/logrus"
 )
 
 const (
-	defaultConfigPath   = "/etc/universal-cnf/config.yaml"
+	defaultConfigPath = "/etc/universal-cnf/config.yaml"
+	//defaultConfigPath   = "/home/mistrate/go/src/github.com/istratem/examples/config.yaml"
 	defaultPluginModule = ""
 )
 
@@ -59,9 +62,8 @@ func (mf *Flags) Process() {
 }
 
 type vL3CompositeEndpoint struct {
-	IpamAllocator ipprovider.AllocatorClient
-
-	registeredSubnets []*ipprovider.Subnet
+	IpamAllocator     ipprovider.AllocatorClient
+	registeredSubnets chan *ipprovider.Subnet
 	mu                *sync.RWMutex
 }
 
@@ -69,7 +71,7 @@ func (e vL3CompositeEndpoint) Cleanup(ctx context.Context) error {
 	var errs errors
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	for _, s := range e.registeredSubnets {
+	for s := range e.registeredSubnets {
 		_, err := e.IpamAllocator.FreeSubnet(ctx, s)
 		if err != nil {
 			errs = append(errs, err)
@@ -83,37 +85,49 @@ func (e vL3CompositeEndpoint) Cleanup(ctx context.Context) error {
 
 func (e vL3CompositeEndpoint) Renew(ctx context.Context, errorHandler func(err error)) error {
 	g, ctx := errgroup.WithContext(ctx)
-	for _, subnet := range e.registeredSubnets {
+	for subnet := range e.registeredSubnets {
 		subnet := subnet
 		g.Go(func() error {
-			for range time.After(time.Duration(subnet.LeaseTimeout) * time.Hour) {
+			for {
+				//TODO: change to subnet.LeaseTime
+				//time.NewTicker(time.Duration(s.leaseCheckPeriod) * time.Hour)
+				time.Sleep(time.Duration(30) * time.Second)
 				_, err := e.IpamAllocator.RenewSubnetLease(ctx, subnet)
 				if err != nil {
 					errorHandler(err)
 				}
 			}
-			return nil
 		})
 	}
 	return g.Wait()
 }
 
 func (e vL3CompositeEndpoint) AddCompositeEndpoints(nsConfig *common.NSConfiguration, ucnfEndpoint *nseconfig.Endpoint) *[]networkservice.NetworkServiceServer {
-	subnet, err := e.IpamAllocator.AllocateSubnet(context.Background(), &ipprovider.SubnetRequest{
-		Identifier: &ipprovider.Identifier{
-			Fqdn:               ucnfEndpoint.CNNS.Address,
-			Name:               uuid.Must(uuid.NewV4()).String(),
-			ConnectivityDomain: ucnfEndpoint.CNNS.Name,
-		},
-		AddrFamily: &ipprovider.IpFamily{Family: ipprovider.IpFamily_IPV4},
-		PrefixLen:  24, // TODO default value 24 add the value to config
-	})
-	if err != nil {
-		logrus.Fatal("ipam allocation not successful: ", err)
+	var subnet *ipprovider.Subnet
+	for i := 0; i < 6; i++ {
+		var err error
+		subnet, err = e.IpamAllocator.AllocateSubnet(context.Background(), &ipprovider.SubnetRequest{
+			Identifier: &ipprovider.Identifier{
+				Fqdn:               ucnfEndpoint.CNNS.Address,
+				Name:               ucnfEndpoint.CNNS.Name + uuid.Must(uuid.NewV4()).String(),
+				ConnectivityDomain: ucnfEndpoint.CNNS.ConnectivityDomain,
+			},
+			AddrFamily: &ipprovider.IpFamily{Family: ipprovider.IpFamily_IPV4},
+			// TODO default value 24 add the value to config
+			PrefixLen: 24,
+		})
+		if err != nil {
+			if i == 5 {
+				logrus.Fatal("ipam allocation not successful: ", err)
+			}
+			logrus.Errorf("ipam allocation not successful: %v \n waiting 60 seconds before retrying \n", err)
+			time.Sleep(60 * time.Second)
+		} else {
+			break
+		}
 	}
-
 	e.mu.Lock()
-	e.registeredSubnets = append(e.registeredSubnets, subnet)
+	e.registeredSubnets <- subnet
 	e.mu.Unlock()
 
 	prefixPool := subnet.Prefix.Subnet
@@ -162,29 +176,18 @@ func main() {
 	if err != nil {
 		logrus.Fatal("unable to connect to ipam server", err)
 	}
-	defer conn.Close()
 
 	ipamAllocator := ipprovider.NewAllocatorClient(conn)
-	//var defCEAddon defaultCompositeEndpointAddon
 	vl3 := vL3CompositeEndpoint{
 		IpamAllocator:     ipamAllocator,
-		registeredSubnets: []*ipprovider.Subnet{},
+		registeredSubnets: make(chan *ipprovider.Subnet),
 		mu:                &sync.RWMutex{},
 	}
+
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	defer func() {
-		if err := vl3.Cleanup(ctx); err != nil {
-			logrus.Error(err)
-		}
-	}()
-
-	ucnfNse := ucnf.NewUcnfNse(mainFlags.ConfigPath, mainFlags.Verify, &vppagent.UniversalCNFVPPAgentBackend{}, vl3)
-
-	logrus.Info("endpoint started")
 
 	go func() {
+		logrus.Info("begin the renew process")
 		if err := vl3.Renew(ctx, func(err error) {
 			if err != nil {
 				logrus.Error("unable to renew the subnet", err)
@@ -194,8 +197,21 @@ func main() {
 		}
 	}()
 
-	defer ucnfNse.Cleanup()
-	<-c
+	ucnfNse := ucnf.NewUcnfNse(mainFlags.ConfigPath, mainFlags.Verify, &vppagent.UniversalCNFVPPAgentBackend{}, vl3)
+	logrus.Info("endpoint started")
+
+	select {
+	case _ = <-c:
+		logrus.Info("cleaning up")
+		if err := vl3.Cleanup(ctx); err != nil {
+			logrus.Error(err)
+		}
+		ucnfNse.Cleanup()
+		logrus.Info("cleaning up complete")
+		cancel()
+		conn.Close()
+	}
+
 }
 
 type errors []error

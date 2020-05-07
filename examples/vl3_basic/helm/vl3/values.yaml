@@ -3,22 +3,20 @@
 # Declare variables to be passed into your templates.
 
 registry: docker.io
-org: tiswanso
+org: mistrate
 tag: unified_api_ipam
-pullPolicy: Always
+pullPolicy: IfNotPresent
 
 cnns:
   nsr:
+    name: vl3-nse
     port: 5005
-    # addr: 
-#  domain: nsr.foo.com
+    addr: vl3-nse.cnns-cisco.com
+    cd: vl3-nse-connectivity-domain
 
 nsm:
-  serviceName: vl3-service
+  serviceName: vl3-nse
 
-ipam:
-  prefixPool: "172.31.0.0/16"
-  # uniqueOctet: 
 
 global:
   

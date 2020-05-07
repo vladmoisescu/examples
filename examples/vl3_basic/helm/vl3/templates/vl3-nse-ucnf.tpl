@@ -25,7 +25,11 @@ spec:
     spec:
       containers:
         - name: vl3-nse
-          image: {{ .Values.registry }}/{{ .Values.org }}/vl3_ucnf-vl3-nse:{{ .Values.tag }}
+{{- if .Values.image }}
+          image: {{ .Values.registry }}/{{ .Values.org }}/{{ .Values.image }}:{{ .Values.tag }}
+{{- else }}
+          image: {{ .Values.registry }}/{{ .Values.org }}/vl3_ucnf-{{ .Values.nsm.serviceName }}:{{ .Values.tag }}
+{{- end }}
           imagePullPolicy: {{ .Values.pullPolicy }}
           env:
             - name: ADVERTISE_NSE_NAME
@@ -47,15 +51,11 @@ spec:
             - name: NSREGISTRY_PORT
               value: "5000"
             - name: IPAM_ADDRESS
-              value: "ipam.cnns-cisco.com:50051"
+              value: "ipam-{{ .Values.cnns.nsr.addr }}:50051"
             - name: NSE_POD_IP
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-{{- if .Values.ipam.uniqueOctet }}
-            - name: NSE_IPAM_UNIQUE_OCTET
-              value: {{ .Values.ipam.uniqueOctet | quote }}
-{{- end }}
             - name: NSM_REMOTE_NS_IP_LIST
               valueFrom:
                 configMapKeyRef:
@@ -93,10 +93,21 @@ data:
         cnns/nsr.port: {{ .Values.cnns.nsr.port | quote }}
 {{- end }}
       cnns:
-        name: {{ .Values.nsm.serviceName | quote }}
-        address: "{{ .Values.cnns.nsr.addr }}:{{ .Values.cnns.nsr.port }}"
+        name: {{ .Values.cnns.nsr.name | quote }}
+        address: {{ .Values.cnns.nsr.addr | quote }}
+        connectivitydomain: {{ .Values.cnns.nsr.cd | quote}}
       vl3:
        ipam:
           prefixpool: {{ .Values.ipam.prefixPool | quote }}
           routes: []
        ifname: "endpoint0"
+{{- if .Values.remote.ipList }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nsm-vl3-{{ .Values.nsm.serviceName }}
+data:
+  remote.ip_list: {{ .Values.remote.ipList | quote }}
+{{- end }}
+
