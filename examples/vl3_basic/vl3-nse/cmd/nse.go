@@ -41,8 +41,7 @@ import (
 )
 
 const (
-	defaultConfigPath = "/etc/universal-cnf/config.yaml"
-	//defaultConfigPath   = "/home/mistrate/go/src/github.com/istratem/examples/config.yaml"
+	defaultConfigPath   = "/etc/universal-cnf/config.yaml"
 	defaultPluginModule = ""
 )
 
@@ -88,15 +87,13 @@ func (e vL3CompositeEndpoint) Renew(ctx context.Context, errorHandler func(err e
 	for subnet := range e.registeredSubnets {
 		subnet := subnet
 		g.Go(func() error {
-			for {
-				//TODO: change to subnet.LeaseTime
-				//time.NewTicker(time.Duration(s.leaseCheckPeriod) * time.Hour)
-				time.Sleep(time.Duration(30) * time.Second)
+			for range time.Tick(time.Duration(subnet.LeaseTimeout-1) * time.Hour) {
 				_, err := e.IpamAllocator.RenewSubnetLease(ctx, subnet)
 				if err != nil {
 					errorHandler(err)
 				}
 			}
+			return nil
 		})
 	}
 	return g.Wait()
@@ -114,7 +111,7 @@ func (e vL3CompositeEndpoint) AddCompositeEndpoints(nsConfig *common.NSConfigura
 			},
 			AddrFamily: &ipprovider.IpFamily{Family: ipprovider.IpFamily_IPV4},
 			// TODO default value 24 add the value to config
-			PrefixLen: 24,
+			PrefixLen: uint32(ucnfEndpoint.VL3.IPAM.PrefixLength),
 		})
 		if err != nil {
 			if i == 5 {

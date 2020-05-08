@@ -70,7 +70,7 @@ fi
 
 echo "---------------Install NSE-------------"
 echo "${CNNS_NSRADDR}"
-helm template "${VL3HELMDIR}"/vl3 --set org="${NSE_HUB}" --set tag="${NSE_TAG}" ${SERVICENAME:+ --set image=${SERVICENAME}} --set pullPolicy="${PULLPOLICY}" ${REMOTE_IP:+ --set remote.ipList=${REMOTE_IP}} ${IPAMPOOL:+ --set ipam.prefixPool=${IPAMPOOL}} ${CNNS_NSRNAME:+ --set cnns.nsr.name=${CNNS_NSRNAME}} --set cnns.nsr.addr="${CNNS_NSRADDR}" --set cnns.nsr.cd="${CNNS_NSRCD}" ${CNNS_NSRPORT:+ --set cnns.nsr.port=${CNNS_NSRPORT}} --set nsm.serviceName="${SERVICENAME}" | kubectl ${INSTALL_OP} ${KCONF:+--kubeconfig $KCONF} -f -
+helm template "${VL3HELMDIR}"/vl3 --set org="${NSE_HUB}" --set tag="${NSE_TAG}" ${SERVICENAME:+ --set image=${SERVICENAME}} --set pullPolicy="${PULLPOLICY}" ${REMOTE_IP:+ --set remote.ipList=${REMOTE_IP}} ${IPAMPOOL:+ --set ipam.defaultPrefixPool=${IPAMPOOL}} ${CNNS_NSRNAME:+ --set cnns.nsr.name=${CNNS_NSRNAME}} --set cnns.nsr.addr="${CNNS_NSRADDR}" --set cnns.nsr.cd="${CNNS_NSRCD}" ${CNNS_NSRPORT:+ --set cnns.nsr.port=${CNNS_NSRPORT}} --set nsm.serviceName="${SERVICENAME}" | kubectl ${INSTALL_OP} ${KCONF:+--kubeconfig $KCONF} -f -
 
 if [[ "$INSTALL_OP" != "delete" ]]; then
   sleep 20

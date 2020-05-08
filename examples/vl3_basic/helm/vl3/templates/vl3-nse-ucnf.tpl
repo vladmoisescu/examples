@@ -95,12 +95,13 @@ data:
       cnns:
         name: {{ .Values.cnns.nsr.name | quote }}
         address: {{ .Values.cnns.nsr.addr | quote }}
-        connectivitydomain: {{ .Values.cnns.nsr.cd | quote}}
+        connectivityDomain: {{ .Values.cnns.nsr.cd | quote}}
       vl3:
        ipam:
-          prefixpool: {{ .Values.ipam.prefixPool | quote }}
+          defaultPrefixPool: {{ .Values.ipam.defaultPrefixPool | quote }}
+          prefixLength: {{ .Values.ipam.prefixLength }}
           routes: []
-       ifname: "endpoint0"
+       ifName: "endpoint0"
 {{- if .Values.remote.ipList }}
 ---
 apiVersion: v1

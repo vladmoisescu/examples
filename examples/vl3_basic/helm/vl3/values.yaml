@@ -14,6 +14,9 @@ cnns:
     addr: vl3-nse.cnns-cisco.com
     cd: vl3-nse-connectivity-domain
 
+ipam:
+  defaultPrefixPool: 192.168.0.0/16
+  prefixLength: 28
 nsm:
   serviceName: vl3-nse
 
