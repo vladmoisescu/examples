@@ -38,14 +38,14 @@ for i in "$@"; do
         --ipamPool=?*)
             IPAMPOOL=${i#*=}
             ;;
-        --ipamOctet=?*)
-            IPAMOCTET=${i#*=}
-            ;;
         --cnnsNsrAddr=?*)
             CNNS_NSRADDR=${i#*=}
             ;;
         --cnnsNsrPort=?*)
             CNNS_NSRPORT=${i#*=}
+            ;;
+        --cnnsNsrCd=?*)
+            CNNS_NSRCD=${i#*=}
             ;;
         --delete)
             INSTALL_OP=delete
@@ -62,9 +62,6 @@ for i in "$@"; do
             ;;
     esac
 done
-
-CNNS_NSRADDR="${SERVICENAME}.cnns-cisco.com"
-CNNS_NSRCD="${SERVICENAME}-connectivity-domain"
 
 sdir=$(dirname ${0})
 #echo "$sdir"
