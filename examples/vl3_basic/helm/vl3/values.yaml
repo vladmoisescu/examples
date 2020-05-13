@@ -10,11 +10,12 @@ pullPolicy: Always
 cnns:
   nsr:
     port: 5005
-  # addr:
+#   addr:
 #  domain: nsr.foo.com
   ipam:
     defaultPrefixPool: 192.168.0.0/16
     prefixLength: 28
+    ipamServer:
 
 nsm:
   serviceName: vl3-service

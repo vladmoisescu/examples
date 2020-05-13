@@ -52,10 +52,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-{{- if .Values.ipam.uniqueOctet }}
-            - name: NSE_IPAM_UNIQUE_OCTET
-              value: {{ .Values.ipam.uniqueOctet | quote }}
-{{- end }}
             - name: NSM_REMOTE_NS_IP_LIST
               valueFrom:
                 configMapKeyRef:
@@ -97,6 +93,6 @@ data:
         address: "{{ .Values.cnns.nsr.addr }}:{{ .Values.cnns.nsr.port }}"
       vl3:
        ipam:
-          prefixpool: {{ .Values.ipam.prefixPool | quote }}
+          defaultPrefixPool: {{ .Values.cnns.ipam.defaultPrefixPool | quote }}
           routes: []
-       ifname: "endpoint0"
+       ifName: "endpoint0"
