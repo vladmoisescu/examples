@@ -47,7 +47,7 @@ spec:
             - name: NSREGISTRY_PORT
               value: "5000"
             - name: IPAM_ADDRESS
-              value: "ipam.cnns-cisco.com:50051"
+              value: "ipam-{{ .Values.cnns.nsr.addr }}:50051"
             - name: NSE_POD_IP
               valueFrom:
                 fieldRef:
@@ -89,10 +89,13 @@ data:
         cnns/nsr.port: {{ .Values.cnns.nsr.port | quote }}
 {{- end }}
       cnns:
-        name: {{ .Values.nsm.serviceName | quote }}
-        address: "{{ .Values.cnns.nsr.addr }}:{{ .Values.cnns.nsr.port }}"
+        name: {{ .Values.cnns.nsr.name | quote }}
+        address: {{ .Values.cnns.nsr.addr | quote }}
+        connectivityDomain: {{ .Values.cnns.nsr.cd | quote}}
       vl3:
        ipam:
           defaultPrefixPool: {{ .Values.cnns.ipam.defaultPrefixPool | quote }}
+          prefixLength: {{ .Values.cnns.ipam.prefixLength }}
           routes: []
        ifName: "endpoint0"
+

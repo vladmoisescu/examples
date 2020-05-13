@@ -10,7 +10,8 @@ pullPolicy: Always
 cnns:
   nsr:
     port: 5005
-#   addr:
+    addr: vl3-nse.cnns-cisco.com
+    cd: vl3-nse-connectivity-domain
 #  domain: nsr.foo.com
   ipam:
     defaultPrefixPool: 192.168.0.0/16

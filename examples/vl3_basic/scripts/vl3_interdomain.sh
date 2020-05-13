@@ -63,6 +63,9 @@ for i in "$@"; do
     esac
 done
 
+CNNS_NSRNAME=${SERVICENAME}
+CNNS_NSRADDR="${CNNS_NSRNAME}.cnns-cisco.com"
+CNNS_NSRCD="${CNNS_NSRNAME}-connectivity-domain"
 
 sdir=$(dirname ${0})
 #echo "$sdir"
@@ -99,7 +102,7 @@ fi
 
 echo "---------------Install NSE-------------"
 # ${KUBEINSTALL} -f ${VL3_NSEMFST}
-helm template ${VL3HELMDIR}/vl3 --set org=${NSE_HUB} --set tag=${NSE_TAG} --set pullPolicy=${PULLPOLICY} ${IPAMPOOL:+ --set ipam.prefixPool=${IPAMPOOL}} ${IPAMOCTET:+ --set ipam.uniqueOctet=${IPAMOCTET}} ${CNNS_NSRADDR:+ --set cnns.nsr.addr=${CNNS_NSRADDR}} ${CNNS_NSRPORT:+ --set cnns.nsr.port=${CNNS_NSRPORT}} --set nsm.serviceName=${SERVICENAME} | kubectl ${INSTALL_OP} ${KCONF:+--kubeconfig $KCONF} -f -
+helm template "${VL3HELMDIR}"/vl3 --set org="${NSE_HUB}" --set tag="${NSE_TAG}" --set pullPolicy="${PULLPOLICY}"  ${IPAMPOOL:+ --set ipam.defaultPrefixPool=${IPAMPOOL}} ${CNNS_NSRNAME:+ --set cnns.nsr.name=${CNNS_NSRNAME}} --set cnns.nsr.addr="${CNNS_NSRADDR}" --set cnns.nsr.cd="${CNNS_NSRCD}" ${CNNS_NSRPORT:+ --set cnns.nsr.port=${CNNS_NSRPORT}} --set nsm.serviceName="${SERVICENAME}" | kubectl ${INSTALL_OP} ${KCONF:+--kubeconfig $KCONF} -f -
 
 if [[ "$INSTALL_OP" != "delete" ]]; then
   sleep 20
