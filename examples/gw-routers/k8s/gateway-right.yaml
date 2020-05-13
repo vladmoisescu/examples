@@ -50,6 +50,6 @@ data:
       labels:
         app: "gw-right"
       ipam:
-        defaultPrefixPool: "10.60.3.0/24"
+        prefixpool: "10.60.3.0/24"
         routes: ["10.60.4.0/24"]
-      ifName: "endpoint0"
+      ifname: "endpoint0"

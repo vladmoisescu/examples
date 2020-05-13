@@ -72,6 +72,6 @@ data:
       labels:
         app: "vl3-nse-ucnf"
       ipam:
-        defaultPrefixPool: "172.31.0.0/16"
+        prefixpool: "172.31.0.0/16"
         routes: []
-      ifName: "endpoint0"
+      ifname: "endpoint0"
