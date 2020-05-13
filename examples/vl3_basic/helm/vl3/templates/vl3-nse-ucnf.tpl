@@ -89,7 +89,7 @@ data:
         cnns/nsr.port: {{ .Values.cnns.nsr.port | quote }}
 {{- end }}
       cnns:
-        name: {{ .Values.cnns.nsr.name | quote }}
+        name: {{ .Values.nsm.serviceName | quote }}
         address: {{ .Values.cnns.nsr.addr | quote }}
         connectivityDomain: {{ .Values.cnns.nsr.cd | quote}}
       vl3:
@@ -97,5 +97,6 @@ data:
           defaultPrefixPool: {{ .Values.cnns.ipam.defaultPrefixPool | quote }}
           prefixLength: {{ .Values.cnns.ipam.prefixLength }}
           routes: []
+{{/*          serverAddress: {{ .Values.cnns.ipam.serverAddress | quote}}*/}}
        ifName: "endpoint0"
 

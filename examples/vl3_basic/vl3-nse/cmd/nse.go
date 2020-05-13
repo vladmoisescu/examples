@@ -110,8 +110,7 @@ func (e vL3CompositeEndpoint) AddCompositeEndpoints(nsConfig *common.NSConfigura
 				ConnectivityDomain: ucnfEndpoint.CNNS.ConnectivityDomain,
 			},
 			AddrFamily: &ipprovider.IpFamily{Family: ipprovider.IpFamily_IPV4},
-			// TODO default value 24 add the value to config
-			PrefixLen: uint32(ucnfEndpoint.VL3.IPAM.PrefixLength),
+			PrefixLen:  uint32(ucnfEndpoint.VL3.IPAM.PrefixLength),
 		})
 		if err != nil {
 			if i == 5 {

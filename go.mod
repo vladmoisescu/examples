@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/Nordix/simple-ipam v1.0.0
-	github.com/danielvladco/k8s-vnet v0.1.0
+	github.com/danielvladco/k8s-vnet v0.2.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dtornow/cnns-nsr v0.0.0-20200331151134-1ba61ba20075
 	github.com/fsnotify/fsnotify v1.4.7
