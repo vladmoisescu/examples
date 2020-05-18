@@ -56,6 +56,7 @@ func NewProcessEndpoints(backend UniversalCNFBackend, endpoints []*nseconfig.End
 			OutgoingNscName:    nsconfig.OutgoingNscName,
 			AdvertiseNseLabels: labelStringFromMap(e.Labels),
 			MechanismType:      memif.MECHANISM,
+			IPAddress:          e.VL3.IPAM.DefaultPrefixPool,
 		}
 		var err error
 		configuration.IPAddress, err = getSubnet(e)

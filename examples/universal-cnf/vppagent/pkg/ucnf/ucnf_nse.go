@@ -49,9 +49,7 @@ func (i *IpamService) AllocateSubnet(ucnfEndpoint *nseconfig.Endpoint) (string, 
 			break
 		}
 	}
-	i.mu.Lock()
 	i.registeredSubnets <- subnet
-	i.mu.Unlock()
 	return subnet.Prefix.Subnet, nil
 }
 
@@ -74,8 +72,6 @@ func (i *IpamService) Renew(errorHandler func(err error)) error {
 
 func (i *IpamService) Cleanup() error {
 	var errs errors
-	i.mu.Lock()
-	defer i.mu.Unlock()
 	for s := range i.registeredSubnets {
 		_, err := i.IpamAllocator.FreeSubnet(*i.ctx, s)
 		if err != nil {
@@ -137,7 +133,16 @@ func NewUcnfNse(configPath string, verify bool, backend config.UniversalCNFBacke
 		mu:                &sync.RWMutex{},
 		ctx:               ctx,
 	}
-
+	go func() {
+		logrus.Info("begin the renew process")
+		if err := ipamService.Renew(func(err error) {
+			if err != nil {
+				logrus.Error("unable to renew the subnet", err)
+			}
+		}); err != nil {
+			logrus.Error(err)
+		}
+	}()
 	pe := config.NewProcessEndpoints(backend, cnfConfig.Endpoints, configuration, ceAddons, ipamService.AllocateSubnet)
 
 	ucnfnse := &UcnfNse{
