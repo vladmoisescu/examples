@@ -17,11 +17,9 @@ package config
 
 import (
 	"context"
-
 	"github.com/danielvladco/k8s-vnet/pkg/nseconfig"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/api/connection/mechanisms/memif"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/api/networkservice"
-
 	"github.com/networkservicemesh/networkservicemesh/sdk/common"
 	"github.com/networkservicemesh/networkservicemesh/sdk/endpoint"
 	"github.com/sirupsen/logrus"
@@ -45,7 +43,7 @@ type CompositeEndpointAddons interface {
 }
 
 // NewProcessEndpoints returns a new ProcessInitCommands struct
-func NewProcessEndpoints(backend UniversalCNFBackend, endpoints []*nseconfig.Endpoint, nsconfig *common.NSConfiguration, ceAddons CompositeEndpointAddons) *ProcessEndpoints {
+func NewProcessEndpoints(backend UniversalCNFBackend, endpoints []*nseconfig.Endpoint, nsconfig *common.NSConfiguration, ceAddons CompositeEndpointAddons, getSubnet func(ucnfEndpoint *nseconfig.Endpoint) (string, error)) *ProcessEndpoints {
 	result := &ProcessEndpoints{}
 
 	for _, e := range endpoints {
@@ -58,9 +56,12 @@ func NewProcessEndpoints(backend UniversalCNFBackend, endpoints []*nseconfig.End
 			OutgoingNscName:    nsconfig.OutgoingNscName,
 			AdvertiseNseLabels: labelStringFromMap(e.Labels),
 			MechanismType:      memif.MECHANISM,
-			IPAddress:          e.VL3.IPAM.DefaultPrefixPool,
 		}
-
+		var err error
+		configuration.IPAddress, err = getSubnet(e)
+		if err != nil {
+			logrus.Fatal(err)
+		}
 		// Build the list of composites
 		compositeEndpoints := []networkservice.NetworkServiceServer{
 			endpoint.NewMonitorEndpoint(configuration),
