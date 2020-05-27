@@ -17,9 +17,11 @@ package config
 
 import (
 	"context"
+
 	"github.com/danielvladco/k8s-vnet/pkg/nseconfig"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/api/connection/mechanisms/memif"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/api/networkservice"
+
 	"github.com/networkservicemesh/networkservicemesh/sdk/common"
 	"github.com/networkservicemesh/networkservicemesh/sdk/endpoint"
 	"github.com/sirupsen/logrus"
@@ -49,14 +51,16 @@ func NewProcessEndpoints(backend UniversalCNFBackend, endpoints []*nseconfig.End
 	for _, e := range endpoints {
 
 		configuration := &common.NSConfiguration{
-			NsmServerSocket:    nsconfig.NsmServerSocket,
-			NsmClientSocket:    nsconfig.NsmClientSocket,
-			Workspace:          nsconfig.Workspace,
-			AdvertiseNseName:   e.Name,
-			OutgoingNscName:    nsconfig.OutgoingNscName,
-			AdvertiseNseLabels: labelStringFromMap(e.Labels),
-			MechanismType:      memif.MECHANISM,
-			IPAddress:          e.VL3.IPAM.DefaultPrefixPool,
+			NsmServerSocket:        nsconfig.NsmServerSocket,
+			NsmClientSocket:        nsconfig.NsmClientSocket,
+			Workspace:              nsconfig.Workspace,
+			EndpointNetworkService: e.Name,
+			ClientNetworkService:   nsconfig.ClientNetworkService,
+			EndpointLabels:         labelStringFromMap(e.Labels),
+			ClientLabels:           nsconfig.ClientLabels,
+			MechanismType:          memif.MECHANISM,
+			IPAddress:              e.VL3.IPAM.DefaultPrefixPool,
+			Routes:                 nil,
 		}
 		var err error
 		configuration.IPAddress, err = getSubnet(e)

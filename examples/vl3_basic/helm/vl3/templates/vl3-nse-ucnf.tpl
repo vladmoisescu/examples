@@ -28,9 +28,9 @@ spec:
           image: {{ .Values.registry }}/{{ .Values.org }}/vl3_ucnf-vl3-nse:{{ .Values.tag }}
           imagePullPolicy: {{ .Values.pullPolicy }}
           env:
-            - name: ADVERTISE_NSE_NAME
+            - name: ENDPOINT_NETWORK_SERVICE
               value: {{ .Values.nsm.serviceName | quote }}
-            - name: ADVERTISE_NSE_LABELS
+            - name: ENDPOINT_LABELS
               value: "app=vl3-nse-{{ .Values.nsm.serviceName }}"
             - name: TRACER_ENABLED
               value: "true"
@@ -90,13 +90,11 @@ data:
 {{- end }}
       cnns:
         name: {{ .Values.nsm.serviceName | quote }}
-        address: {{ .Values.cnns.nsr.addr | quote }}
-        connectivityDomain: {{ .Values.cnns.nsr.cd | quote}}
+        address: "{{ .Values.cnns.nsr.addr }}:{{ .Values.cnns.nsr.port }}"
+        connectivityDomain: "{{ .Values.nsm.serviceName }}-connectivity-domain"
       vl3:
        ipam:
-          defaultPrefixPool: {{ .Values.cnns.ipam.defaultPrefixPool | quote }}
-          prefixLength: {{ .Values.cnns.ipam.prefixLength }}
+          defaultPrefixPool: {{ .Values.ipam.prefixPool | quote }}
+          prefixLength: 2
           routes: []
-{{/*          serverAddress: {{ .Values.cnns.ipam.serverAddress | quote}}*/}}
        ifName: "endpoint0"
-
