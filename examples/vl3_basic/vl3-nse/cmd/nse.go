@@ -83,6 +83,7 @@ func (e vL3CompositeEndpoint) AddCompositeEndpoints(nsConfig *common.NSConfigura
 
 func main() {
 	// Capture signals to cleanup before exiting
+	logrus.Info("starting endpoint")
 	c := tools.NewOSSignalChannel()
 
 	logrus.SetOutput(os.Stdout)

@@ -90,11 +90,11 @@ data:
 {{- end }}
       cnns:
         name: {{ .Values.nsm.serviceName | quote }}
-        address: "{{ .Values.cnns.nsr.addr }}:{{ .Values.cnns.nsr.port }}"
+        address: "{{ .Values.cnns.nsr.addr }}"
         connectivityDomain: "{{ .Values.nsm.serviceName }}-connectivity-domain"
       vl3:
        ipam:
-          defaultPrefixPool: {{ .Values.ipam.prefixPool | quote }}
-          prefixLength: 2
+          defaultPrefixPool: {{ .Values.cnns.ipam.defaultPrefixPool | quote }}
+          prefixLength: 28
           routes: []
        ifName: "endpoint0"
