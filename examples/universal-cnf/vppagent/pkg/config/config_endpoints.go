@@ -48,8 +48,10 @@ type IpamService interface {
 	AllocateSubnet(ucnfEndpoint *nseconfig.Endpoint) (string, error)
 }
 
+type IpamServiceFactory func(addr string) IpamService
+
 // NewProcessEndpoints returns a new ProcessInitCommands struct
-func NewProcessEndpoints(backend UniversalCNFBackend, endpoints []*nseconfig.Endpoint, nsconfig *common.NSConfiguration, ceAddons CompositeEndpointAddons, newService func(addr string) IpamService) *ProcessEndpoints {
+func NewProcessEndpoints(backend UniversalCNFBackend, endpoints []*nseconfig.Endpoint, nsconfig *common.NSConfiguration, ceAddons CompositeEndpointAddons, newService IpamServiceFactory) *ProcessEndpoints {
 	result := &ProcessEndpoints{}
 
 	for _, e := range endpoints {

@@ -94,6 +94,6 @@ data:
        ipam:
           defaultPrefixPool: {{ .Values.cnns.ipam.defaultPrefixPool | quote }}
           serverAddress: "ipam-{{ .Values.cnns.nsr.addr }}:50051"
-          prefixLength: 28
+          prefixLength: 22
           routes: []
        ifName: "endpoint0"

@@ -96,8 +96,6 @@ func (ucnf *UcnfNse) Cleanup() {
 	ucnf.processEndpoints.Cleanup()
 }
 
-//type IpamServiceFactory func(addr string) IpamService
-
 func NewUcnfNse(configPath string, verify bool, backend config.UniversalCNFBackend, ceAddons config.CompositeEndpointAddons, ctx *context.Context) *UcnfNse {
 	cnfConfig := &nseconfig.Config{}
 	f, err := os.Open(configPath)
