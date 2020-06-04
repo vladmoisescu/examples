@@ -15,18 +15,16 @@ import (
 	"google.golang.org/grpc"
 	"gopkg.in/yaml.v2"
 	"os"
-	"sync"
 	"time"
 )
 
-type IpamService struct {
+type ipamService struct {
 	IpamAllocator     ipprovider.AllocatorClient
 	registeredSubnets chan *ipprovider.Subnet
-	mu                *sync.RWMutex
 	ctx               *context.Context
 }
 
-func (i *IpamService) AllocateSubnet(ucnfEndpoint *nseconfig.Endpoint) (string, error) {
+func (i *ipamService) AllocateSubnet(ucnfEndpoint *nseconfig.Endpoint) (string, error) {
 	var subnet *ipprovider.Subnet
 	for j := 0; j < 6; j++ {
 		var err error
@@ -53,7 +51,7 @@ func (i *IpamService) AllocateSubnet(ucnfEndpoint *nseconfig.Endpoint) (string, 
 	return subnet.Prefix.Subnet, nil
 }
 
-func (i *IpamService) Renew(errorHandler func(err error)) error {
+func (i *ipamService) Renew(errorHandler func(err error)) error {
 	g, ctx := errgroup.WithContext(*i.ctx)
 	for subnet := range i.registeredSubnets {
 		subnet := subnet
@@ -67,10 +65,15 @@ func (i *IpamService) Renew(errorHandler func(err error)) error {
 			return nil
 		})
 	}
+	logrus.Info("Cleaning registered subnets")
+	err := i.Cleanup()
+	if err != nil {
+		errorHandler(err)
+	}
 	return g.Wait()
 }
 
-func (i *IpamService) Cleanup() error {
+func (i *ipamService) Cleanup() error {
 	var errs errors
 	for s := range i.registeredSubnets {
 		_, err := i.IpamAllocator.FreeSubnet(*i.ctx, s)
@@ -92,6 +95,8 @@ type UcnfNse struct {
 func (ucnf *UcnfNse) Cleanup() {
 	ucnf.processEndpoints.Cleanup()
 }
+
+//type IpamServiceFactory func(addr string) IpamService
 
 func NewUcnfNse(configPath string, verify bool, backend config.UniversalCNFBackend, ceAddons config.CompositeEndpointAddons, ctx *context.Context) *UcnfNse {
 	cnfConfig := &nseconfig.Config{}
@@ -115,35 +120,33 @@ func NewUcnfNse(configPath string, verify bool, backend config.UniversalCNFBacke
 	}
 
 	configuration := common.FromEnv()
-
-	//add logic here
-	ipamAddress, ok := os.LookupEnv("IPAM_ADDRESS")
-	if !ok {
-		ipamAddress = "cnns-ipam:50051"
-	}
-	conn, err := grpc.Dial(ipamAddress, grpc.WithInsecure())
-	if err != nil {
-		logrus.Fatal("unable to connect to ipam server", err)
-	}
-
-	ipamAllocator := ipprovider.NewAllocatorClient(conn)
-	ipamService := IpamService{
-		IpamAllocator:     ipamAllocator,
-		registeredSubnets: make(chan *ipprovider.Subnet),
-		mu:                &sync.RWMutex{},
-		ctx:               ctx,
-	}
-	go func() {
-		logrus.Info("begin the renew process")
-		if err := ipamService.Renew(func(err error) {
-			if err != nil {
-				logrus.Error("unable to renew the subnet", err)
-			}
-		}); err != nil {
-			logrus.Error(err)
+	newIpamService := func(addr string) config.IpamService {
+		conn, err := grpc.Dial(addr, grpc.WithInsecure())
+		if err != nil {
+			logrus.Fatal("unable to connect to ipam server: %v", err)
 		}
-	}()
-	pe := config.NewProcessEndpoints(backend, cnfConfig.Endpoints, configuration, ceAddons, ipamService.AllocateSubnet)
+
+		ipamAllocator := ipprovider.NewAllocatorClient(conn)
+		ipamService := ipamService{
+			IpamAllocator:     ipamAllocator,
+			registeredSubnets: make(chan *ipprovider.Subnet),
+			ctx:               ctx,
+		}
+		go func() {
+			logrus.Info("begin the renew process")
+			if err := ipamService.Renew(func(err error) {
+				if err != nil {
+					logrus.Error("unable to renew the subnet", err)
+				}
+			}); err != nil {
+				logrus.Error(err)
+			}
+		}()
+		return &ipamService
+	}
+	//add logic here
+
+	pe := config.NewProcessEndpoints(backend, cnfConfig.Endpoints, configuration, ceAddons, newIpamService)
 
 	ucnfnse := &UcnfNse{
 		processEndpoints: pe,

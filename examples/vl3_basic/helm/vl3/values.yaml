@@ -16,7 +16,7 @@ cnns:
   ipam:
     defaultPrefixPool: 192.168.0.0/16
     prefixLength: 28
-    serverAddress: ""
+    serverAddress: ipam-vl3-service:50051
 
 nsm:
   serviceName: vl3-service
