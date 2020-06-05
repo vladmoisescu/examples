@@ -67,16 +67,20 @@ func (*Empty) Descriptor() ([]byte, []int) {
 	return file_serviceregistry_proto_rawDescGZIP(), []int{0}
 }
 
-type ServiceRequest struct {
+//The request used to register a new service or update the existing ones
+type ServiceWorkload struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Service *Service `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"`
+	ServiceName        string    `protobuf:"bytes,1,opt,name=serviceName,proto3" json:"serviceName,omitempty"`
+	ConnectivityDomain string    `protobuf:"bytes,2,opt,name=connectivityDomain,proto3" json:"connectivityDomain,omitempty"`
+	Workload           *Workload `protobuf:"bytes,3,opt,name=workload,proto3" json:"workload,omitempty"`
+	Ports              []int32   `protobuf:"varint,4,rep,packed,name=ports,proto3" json:"ports,omitempty"`
 }
 
-func (x *ServiceRequest) Reset() {
-	*x = ServiceRequest{}
+func (x *ServiceWorkload) Reset() {
+	*x = ServiceWorkload{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_serviceregistry_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -84,13 +88,13 @@ func (x *ServiceRequest) Reset() {
 	}
 }
 
-func (x *ServiceRequest) String() string {
+func (x *ServiceWorkload) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ServiceRequest) ProtoMessage() {}
+func (*ServiceWorkload) ProtoMessage() {}
 
-func (x *ServiceRequest) ProtoReflect() protoreflect.Message {
+func (x *ServiceWorkload) ProtoReflect() protoreflect.Message {
 	mi := &file_serviceregistry_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -102,142 +106,53 @@ func (x *ServiceRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ServiceRequest.ProtoReflect.Descriptor instead.
-func (*ServiceRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ServiceWorkload.ProtoReflect.Descriptor instead.
+func (*ServiceWorkload) Descriptor() ([]byte, []int) {
 	return file_serviceregistry_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ServiceRequest) GetService() *Service {
-	if x != nil {
-		return x.Service
-	}
-	return nil
-}
-
-type Service struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Name      string      `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Workloads []*Workload `protobuf:"bytes,2,rep,name=workloads,proto3" json:"workloads,omitempty"`
-	Ports     []int32     `protobuf:"varint,3,rep,packed,name=ports,proto3" json:"ports,omitempty"`
-}
-
-func (x *Service) Reset() {
-	*x = Service{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_serviceregistry_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Service) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Service) ProtoMessage() {}
-
-func (x *Service) ProtoReflect() protoreflect.Message {
-	mi := &file_serviceregistry_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Service.ProtoReflect.Descriptor instead.
-func (*Service) Descriptor() ([]byte, []int) {
-	return file_serviceregistry_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *Service) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *Service) GetWorkloads() []*Workload {
-	if x != nil {
-		return x.Workloads
-	}
-	return nil
-}
-
-func (x *Service) GetPorts() []int32 {
-	if x != nil {
-		return x.Ports
-	}
-	return nil
-}
-
-type QueryRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	ServiceName string `protobuf:"bytes,1,opt,name=serviceName,proto3" json:"serviceName,omitempty"`
-}
-
-func (x *QueryRequest) Reset() {
-	*x = QueryRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_serviceregistry_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *QueryRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*QueryRequest) ProtoMessage() {}
-
-func (x *QueryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_serviceregistry_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use QueryRequest.ProtoReflect.Descriptor instead.
-func (*QueryRequest) Descriptor() ([]byte, []int) {
-	return file_serviceregistry_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *QueryRequest) GetServiceName() string {
+func (x *ServiceWorkload) GetServiceName() string {
 	if x != nil {
 		return x.ServiceName
 	}
 	return ""
 }
 
+func (x *ServiceWorkload) GetConnectivityDomain() string {
+	if x != nil {
+		return x.ConnectivityDomain
+	}
+	return ""
+}
+
+func (x *ServiceWorkload) GetWorkload() *Workload {
+	if x != nil {
+		return x.Workload
+	}
+	return nil
+}
+
+func (x *ServiceWorkload) GetPorts() []int32 {
+	if x != nil {
+		return x.Ports
+	}
+	return nil
+}
+
+//Basic workload
 type Workload struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Identifier           string   `protobuf:"bytes,1,opt,name=identifier,proto3" json:"identifier,omitempty"`
-	EndpointIPAddress    []string `protobuf:"bytes,2,rep,name=endpointIPAddress,proto3" json:"endpointIPAddress,omitempty"`
-	ConnectivityDomainIp string   `protobuf:"bytes,3,opt,name=connectivity_domain_ip,json=connectivityDomainIp,proto3" json:"connectivity_domain_ip,omitempty"`
+	Identifier *WorkloadIdentifier `protobuf:"bytes,1,opt,name=identifier,proto3" json:"identifier,omitempty"`
+	IPAddress  []string            `protobuf:"bytes,2,rep,name=IPAddress,proto3" json:"IPAddress,omitempty"`
 }
 
 func (x *Workload) Reset() {
 	*x = Workload{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_serviceregistry_proto_msgTypes[4]
+		mi := &file_serviceregistry_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -250,7 +165,7 @@ func (x *Workload) String() string {
 func (*Workload) ProtoMessage() {}
 
 func (x *Workload) ProtoReflect() protoreflect.Message {
-	mi := &file_serviceregistry_proto_msgTypes[4]
+	mi := &file_serviceregistry_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -263,26 +178,201 @@ func (x *Workload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Workload.ProtoReflect.Descriptor instead.
 func (*Workload) Descriptor() ([]byte, []int) {
-	return file_serviceregistry_proto_rawDescGZIP(), []int{4}
+	return file_serviceregistry_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *Workload) GetIdentifier() string {
+func (x *Workload) GetIdentifier() *WorkloadIdentifier {
 	if x != nil {
 		return x.Identifier
-	}
-	return ""
-}
-
-func (x *Workload) GetEndpointIPAddress() []string {
-	if x != nil {
-		return x.EndpointIPAddress
 	}
 	return nil
 }
 
-func (x *Workload) GetConnectivityDomainIp() string {
+func (x *Workload) GetIPAddress() []string {
 	if x != nil {
-		return x.ConnectivityDomainIp
+		return x.IPAddress
+	}
+	return nil
+}
+
+//Request used to querry
+type ServiceRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Name               string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ConnectivityDomain string `protobuf:"bytes,2,opt,name=connectivityDomain,proto3" json:"connectivityDomain,omitempty"`
+}
+
+func (x *ServiceRequest) Reset() {
+	*x = ServiceRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_serviceregistry_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ServiceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ServiceRequest) ProtoMessage() {}
+
+func (x *ServiceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_serviceregistry_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ServiceRequest.ProtoReflect.Descriptor instead.
+func (*ServiceRequest) Descriptor() ([]byte, []int) {
+	return file_serviceregistry_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ServiceRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ServiceRequest) GetConnectivityDomain() string {
+	if x != nil {
+		return x.ConnectivityDomain
+	}
+	return ""
+}
+
+type ServiceWorkloads struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ServiceName string      `protobuf:"bytes,1,opt,name=serviceName,proto3" json:"serviceName,omitempty"`
+	Workloads   []*Workload `protobuf:"bytes,2,rep,name=workloads,proto3" json:"workloads,omitempty"`
+	Ports       []int32     `protobuf:"varint,3,rep,packed,name=ports,proto3" json:"ports,omitempty"`
+}
+
+func (x *ServiceWorkloads) Reset() {
+	*x = ServiceWorkloads{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_serviceregistry_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ServiceWorkloads) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ServiceWorkloads) ProtoMessage() {}
+
+func (x *ServiceWorkloads) ProtoReflect() protoreflect.Message {
+	mi := &file_serviceregistry_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ServiceWorkloads.ProtoReflect.Descriptor instead.
+func (*ServiceWorkloads) Descriptor() ([]byte, []int) {
+	return file_serviceregistry_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ServiceWorkloads) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+func (x *ServiceWorkloads) GetWorkloads() []*Workload {
+	if x != nil {
+		return x.Workloads
+	}
+	return nil
+}
+
+func (x *ServiceWorkloads) GetPorts() []int32 {
+	if x != nil {
+		return x.Ports
+	}
+	return nil
+}
+
+type WorkloadIdentifier struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Cluster      string `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	PodName      string `protobuf:"bytes,2,opt,name=podName,proto3" json:"podName,omitempty"`
+	WorkloadName string `protobuf:"bytes,3,opt,name=workloadName,proto3" json:"workloadName,omitempty"`
+}
+
+func (x *WorkloadIdentifier) Reset() {
+	*x = WorkloadIdentifier{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_serviceregistry_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *WorkloadIdentifier) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkloadIdentifier) ProtoMessage() {}
+
+func (x *WorkloadIdentifier) ProtoReflect() protoreflect.Message {
+	mi := &file_serviceregistry_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorkloadIdentifier.ProtoReflect.Descriptor instead.
+func (*WorkloadIdentifier) Descriptor() ([]byte, []int) {
+	return file_serviceregistry_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *WorkloadIdentifier) GetCluster() string {
+	if x != nil {
+		return x.Cluster
+	}
+	return ""
+}
+
+func (x *WorkloadIdentifier) GetPodName() string {
+	if x != nil {
+		return x.PodName
+	}
+	return ""
+}
+
+func (x *WorkloadIdentifier) GetWorkloadName() string {
+	if x != nil {
+		return x.WorkloadName
 	}
 	return ""
 }
@@ -292,42 +382,58 @@ var File_serviceregistry_proto protoreflect.FileDescriptor
 var file_serviceregistry_proto_rawDesc = []byte{
 	0x0a, 0x15, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72,
 	0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x05, 0x73, 0x76, 0x72, 0x65, 0x67, 0x22, 0x07,
-	0x0a, 0x05, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x3a, 0x0a, 0x0e, 0x53, 0x65, 0x72, 0x76, 0x69,
-	0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x28, 0x0a, 0x07, 0x73, 0x65, 0x72,
-	0x76, 0x69, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0e, 0x2e, 0x73, 0x76, 0x72,
-	0x65, 0x67, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x07, 0x73, 0x65, 0x72, 0x76,
-	0x69, 0x63, 0x65, 0x22, 0x62, 0x0a, 0x07, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x12,
-	0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61,
-	0x6d, 0x65, 0x12, 0x2d, 0x0a, 0x09, 0x77, 0x6f, 0x72, 0x6b, 0x6c, 0x6f, 0x61, 0x64, 0x73, 0x18,
-	0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x73, 0x76, 0x72, 0x65, 0x67, 0x2e, 0x57, 0x6f,
-	0x72, 0x6b, 0x6c, 0x6f, 0x61, 0x64, 0x52, 0x09, 0x77, 0x6f, 0x72, 0x6b, 0x6c, 0x6f, 0x61, 0x64,
-	0x73, 0x12, 0x14, 0x0a, 0x05, 0x70, 0x6f, 0x72, 0x74, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x05,
-	0x52, 0x05, 0x70, 0x6f, 0x72, 0x74, 0x73, 0x22, 0x30, 0x0a, 0x0c, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x20, 0x0a, 0x0b, 0x73, 0x65, 0x72, 0x76, 0x69,
-	0x63, 0x65, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x73, 0x65,
-	0x72, 0x76, 0x69, 0x63, 0x65, 0x4e, 0x61, 0x6d, 0x65, 0x22, 0x8e, 0x01, 0x0a, 0x08, 0x57, 0x6f,
-	0x72, 0x6b, 0x6c, 0x6f, 0x61, 0x64, 0x12, 0x1e, 0x0a, 0x0a, 0x69, 0x64, 0x65, 0x6e, 0x74, 0x69,
-	0x66, 0x69, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x69, 0x64, 0x65, 0x6e,
-	0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x12, 0x2c, 0x0a, 0x11, 0x65, 0x6e, 0x64, 0x70, 0x6f, 0x69,
-	0x6e, 0x74, 0x49, 0x50, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28,
-	0x09, 0x52, 0x11, 0x65, 0x6e, 0x64, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x49, 0x50, 0x41, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x12, 0x34, 0x0a, 0x16, 0x63, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69,
-	0x76, 0x69, 0x74, 0x79, 0x5f, 0x64, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x5f, 0x69, 0x70, 0x18, 0x03,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x14, 0x63, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x76, 0x69,
-	0x74, 0x79, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x49, 0x70, 0x32, 0xb5, 0x01, 0x0a, 0x08, 0x52,
-	0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x12, 0x3a, 0x0a, 0x0f, 0x52, 0x65, 0x67, 0x69, 0x73,
-	0x74, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x15, 0x2e, 0x73, 0x76, 0x72,
-	0x65, 0x67, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x0e, 0x2e, 0x73, 0x76, 0x72, 0x65, 0x67, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63,
-	0x65, 0x22, 0x00, 0x12, 0x35, 0x0a, 0x0c, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x65, 0x72, 0x76,
-	0x69, 0x63, 0x65, 0x12, 0x13, 0x2e, 0x73, 0x76, 0x72, 0x65, 0x67, 0x2e, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0e, 0x2e, 0x73, 0x76, 0x72, 0x65, 0x67,
-	0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x22, 0x00, 0x12, 0x36, 0x0a, 0x0d, 0x52, 0x65,
-	0x6d, 0x6f, 0x76, 0x65, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x15, 0x2e, 0x73, 0x76,
-	0x72, 0x65, 0x67, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x0c, 0x2e, 0x73, 0x76, 0x72, 0x65, 0x67, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79,
-	0x22, 0x00, 0x42, 0x11, 0x5a, 0x0f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x72, 0x65, 0x67,
-	0x69, 0x73, 0x74, 0x72, 0x79, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x0a, 0x05, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0xa6, 0x01, 0x0a, 0x0f, 0x53, 0x65, 0x72, 0x76,
+	0x69, 0x63, 0x65, 0x57, 0x6f, 0x72, 0x6b, 0x6c, 0x6f, 0x61, 0x64, 0x12, 0x20, 0x0a, 0x0b, 0x73,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x0b, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x2e, 0x0a,
+	0x12, 0x63, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x76, 0x69, 0x74, 0x79, 0x44, 0x6f, 0x6d,
+	0x61, 0x69, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x12, 0x63, 0x6f, 0x6e, 0x6e, 0x65,
+	0x63, 0x74, 0x69, 0x76, 0x69, 0x74, 0x79, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x12, 0x2b, 0x0a,
+	0x08, 0x77, 0x6f, 0x72, 0x6b, 0x6c, 0x6f, 0x61, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x0f, 0x2e, 0x73, 0x76, 0x72, 0x65, 0x67, 0x2e, 0x57, 0x6f, 0x72, 0x6b, 0x6c, 0x6f, 0x61, 0x64,
+	0x52, 0x08, 0x77, 0x6f, 0x72, 0x6b, 0x6c, 0x6f, 0x61, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x70, 0x6f,
+	0x72, 0x74, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x05, 0x52, 0x05, 0x70, 0x6f, 0x72, 0x74, 0x73,
+	0x22, 0x63, 0x0a, 0x08, 0x57, 0x6f, 0x72, 0x6b, 0x6c, 0x6f, 0x61, 0x64, 0x12, 0x39, 0x0a, 0x0a,
+	0x69, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x19, 0x2e, 0x73, 0x76, 0x72, 0x65, 0x67, 0x2e, 0x57, 0x6f, 0x72, 0x6b, 0x6c, 0x6f, 0x61,
+	0x64, 0x49, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x52, 0x0a, 0x69, 0x64, 0x65,
+	0x6e, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x12, 0x1c, 0x0a, 0x09, 0x49, 0x50, 0x41, 0x64, 0x64,
+	0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x09, 0x49, 0x50, 0x41, 0x64,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0x54, 0x0a, 0x0e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x2e, 0x0a, 0x12, 0x63,
+	0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x76, 0x69, 0x74, 0x79, 0x44, 0x6f, 0x6d, 0x61, 0x69,
+	0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x12, 0x63, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74,
+	0x69, 0x76, 0x69, 0x74, 0x79, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x22, 0x79, 0x0a, 0x10, 0x53,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x57, 0x6f, 0x72, 0x6b, 0x6c, 0x6f, 0x61, 0x64, 0x73, 0x12,
+	0x20, 0x0a, 0x0b, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x4e, 0x61, 0x6d,
+	0x65, 0x12, 0x2d, 0x0a, 0x09, 0x77, 0x6f, 0x72, 0x6b, 0x6c, 0x6f, 0x61, 0x64, 0x73, 0x18, 0x02,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x73, 0x76, 0x72, 0x65, 0x67, 0x2e, 0x57, 0x6f, 0x72,
+	0x6b, 0x6c, 0x6f, 0x61, 0x64, 0x52, 0x09, 0x77, 0x6f, 0x72, 0x6b, 0x6c, 0x6f, 0x61, 0x64, 0x73,
+	0x12, 0x14, 0x0a, 0x05, 0x70, 0x6f, 0x72, 0x74, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x05, 0x52,
+	0x05, 0x70, 0x6f, 0x72, 0x74, 0x73, 0x22, 0x6c, 0x0a, 0x12, 0x57, 0x6f, 0x72, 0x6b, 0x6c, 0x6f,
+	0x61, 0x64, 0x49, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x12, 0x18, 0x0a, 0x07,
+	0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x63,
+	0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x6f, 0x64, 0x4e, 0x61, 0x6d,
+	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x6f, 0x64, 0x4e, 0x61, 0x6d, 0x65,
+	0x12, 0x22, 0x0a, 0x0c, 0x77, 0x6f, 0x72, 0x6b, 0x6c, 0x6f, 0x61, 0x64, 0x4e, 0x61, 0x6d, 0x65,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x77, 0x6f, 0x72, 0x6b, 0x6c, 0x6f, 0x61, 0x64,
+	0x4e, 0x61, 0x6d, 0x65, 0x32, 0xc0, 0x01, 0x0a, 0x08, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72,
+	0x79, 0x12, 0x39, 0x0a, 0x0f, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x53, 0x65, 0x72,
+	0x76, 0x69, 0x63, 0x65, 0x12, 0x16, 0x2e, 0x73, 0x76, 0x72, 0x65, 0x67, 0x2e, 0x53, 0x65, 0x72,
+	0x76, 0x69, 0x63, 0x65, 0x57, 0x6f, 0x72, 0x6b, 0x6c, 0x6f, 0x61, 0x64, 0x1a, 0x0c, 0x2e, 0x73,
+	0x76, 0x72, 0x65, 0x67, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x12, 0x40, 0x0a, 0x0c,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x15, 0x2e, 0x73,
+	0x76, 0x72, 0x65, 0x67, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x17, 0x2e, 0x73, 0x76, 0x72, 0x65, 0x67, 0x2e, 0x53, 0x65, 0x72, 0x76,
+	0x69, 0x63, 0x65, 0x57, 0x6f, 0x72, 0x6b, 0x6c, 0x6f, 0x61, 0x64, 0x73, 0x22, 0x00, 0x12, 0x37,
+	0x0a, 0x0d, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12,
+	0x16, 0x2e, 0x73, 0x76, 0x72, 0x65, 0x67, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x57,
+	0x6f, 0x72, 0x6b, 0x6c, 0x6f, 0x61, 0x64, 0x1a, 0x0c, 0x2e, 0x73, 0x76, 0x72, 0x65, 0x67, 0x2e,
+	0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x42, 0x11, 0x5a, 0x0f, 0x73, 0x65, 0x72, 0x76, 0x69,
+	0x63, 0x65, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -342,28 +448,30 @@ func file_serviceregistry_proto_rawDescGZIP() []byte {
 	return file_serviceregistry_proto_rawDescData
 }
 
-var file_serviceregistry_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_serviceregistry_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_serviceregistry_proto_goTypes = []interface{}{
-	(*Empty)(nil),          // 0: svreg.Empty
-	(*ServiceRequest)(nil), // 1: svreg.ServiceRequest
-	(*Service)(nil),        // 2: svreg.Service
-	(*QueryRequest)(nil),   // 3: svreg.QueryRequest
-	(*Workload)(nil),       // 4: svreg.Workload
+	(*Empty)(nil),              // 0: svreg.Empty
+	(*ServiceWorkload)(nil),    // 1: svreg.ServiceWorkload
+	(*Workload)(nil),           // 2: svreg.Workload
+	(*ServiceRequest)(nil),     // 3: svreg.ServiceRequest
+	(*ServiceWorkloads)(nil),   // 4: svreg.ServiceWorkloads
+	(*WorkloadIdentifier)(nil), // 5: svreg.WorkloadIdentifier
 }
 var file_serviceregistry_proto_depIdxs = []int32{
-	2, // 0: svreg.ServiceRequest.service:type_name -> svreg.Service
-	4, // 1: svreg.Service.workloads:type_name -> svreg.Workload
-	1, // 2: svreg.Registry.RegisterService:input_type -> svreg.ServiceRequest
-	3, // 3: svreg.Registry.QueryService:input_type -> svreg.QueryRequest
-	1, // 4: svreg.Registry.RemoveService:input_type -> svreg.ServiceRequest
-	2, // 5: svreg.Registry.RegisterService:output_type -> svreg.Service
-	2, // 6: svreg.Registry.QueryService:output_type -> svreg.Service
-	0, // 7: svreg.Registry.RemoveService:output_type -> svreg.Empty
-	5, // [5:8] is the sub-list for method output_type
-	2, // [2:5] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	2, // 0: svreg.ServiceWorkload.workload:type_name -> svreg.Workload
+	5, // 1: svreg.Workload.identifier:type_name -> svreg.WorkloadIdentifier
+	2, // 2: svreg.ServiceWorkloads.workloads:type_name -> svreg.Workload
+	1, // 3: svreg.Registry.RegisterService:input_type -> svreg.ServiceWorkload
+	3, // 4: svreg.Registry.QueryService:input_type -> svreg.ServiceRequest
+	1, // 5: svreg.Registry.RemoveService:input_type -> svreg.ServiceWorkload
+	0, // 6: svreg.Registry.RegisterService:output_type -> svreg.Empty
+	4, // 7: svreg.Registry.QueryService:output_type -> svreg.ServiceWorkloads
+	0, // 8: svreg.Registry.RemoveService:output_type -> svreg.Empty
+	6, // [6:9] is the sub-list for method output_type
+	3, // [3:6] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_serviceregistry_proto_init() }
@@ -385,7 +493,7 @@ func file_serviceregistry_proto_init() {
 			}
 		}
 		file_serviceregistry_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ServiceRequest); i {
+			switch v := v.(*ServiceWorkload); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -397,7 +505,7 @@ func file_serviceregistry_proto_init() {
 			}
 		}
 		file_serviceregistry_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Service); i {
+			switch v := v.(*Workload); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -409,7 +517,7 @@ func file_serviceregistry_proto_init() {
 			}
 		}
 		file_serviceregistry_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryRequest); i {
+			switch v := v.(*ServiceRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -421,7 +529,19 @@ func file_serviceregistry_proto_init() {
 			}
 		}
 		file_serviceregistry_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Workload); i {
+			switch v := v.(*ServiceWorkloads); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_serviceregistry_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*WorkloadIdentifier); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -439,7 +559,7 @@ func file_serviceregistry_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_serviceregistry_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -465,9 +585,9 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type RegistryClient interface {
-	RegisterService(ctx context.Context, in *ServiceRequest, opts ...grpc.CallOption) (*Service, error)
-	QueryService(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*Service, error)
-	RemoveService(ctx context.Context, in *ServiceRequest, opts ...grpc.CallOption) (*Empty, error)
+	RegisterService(ctx context.Context, in *ServiceWorkload, opts ...grpc.CallOption) (*Empty, error)
+	QueryService(ctx context.Context, in *ServiceRequest, opts ...grpc.CallOption) (*ServiceWorkloads, error)
+	RemoveService(ctx context.Context, in *ServiceWorkload, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type registryClient struct {
@@ -478,8 +598,8 @@ func NewRegistryClient(cc grpc.ClientConnInterface) RegistryClient {
 	return &registryClient{cc}
 }
 
-func (c *registryClient) RegisterService(ctx context.Context, in *ServiceRequest, opts ...grpc.CallOption) (*Service, error) {
-	out := new(Service)
+func (c *registryClient) RegisterService(ctx context.Context, in *ServiceWorkload, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/svreg.Registry/RegisterService", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -487,8 +607,8 @@ func (c *registryClient) RegisterService(ctx context.Context, in *ServiceRequest
 	return out, nil
 }
 
-func (c *registryClient) QueryService(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*Service, error) {
-	out := new(Service)
+func (c *registryClient) QueryService(ctx context.Context, in *ServiceRequest, opts ...grpc.CallOption) (*ServiceWorkloads, error) {
+	out := new(ServiceWorkloads)
 	err := c.cc.Invoke(ctx, "/svreg.Registry/QueryService", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -496,7 +616,7 @@ func (c *registryClient) QueryService(ctx context.Context, in *QueryRequest, opt
 	return out, nil
 }
 
-func (c *registryClient) RemoveService(ctx context.Context, in *ServiceRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *registryClient) RemoveService(ctx context.Context, in *ServiceWorkload, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/svreg.Registry/RemoveService", in, out, opts...)
 	if err != nil {
@@ -507,22 +627,22 @@ func (c *registryClient) RemoveService(ctx context.Context, in *ServiceRequest, 
 
 // RegistryServer is the server API for Registry service.
 type RegistryServer interface {
-	RegisterService(context.Context, *ServiceRequest) (*Service, error)
-	QueryService(context.Context, *QueryRequest) (*Service, error)
-	RemoveService(context.Context, *ServiceRequest) (*Empty, error)
+	RegisterService(context.Context, *ServiceWorkload) (*Empty, error)
+	QueryService(context.Context, *ServiceRequest) (*ServiceWorkloads, error)
+	RemoveService(context.Context, *ServiceWorkload) (*Empty, error)
 }
 
 // UnimplementedRegistryServer can be embedded to have forward compatible implementations.
 type UnimplementedRegistryServer struct {
 }
 
-func (*UnimplementedRegistryServer) RegisterService(context.Context, *ServiceRequest) (*Service, error) {
+func (*UnimplementedRegistryServer) RegisterService(context.Context, *ServiceWorkload) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterService not implemented")
 }
-func (*UnimplementedRegistryServer) QueryService(context.Context, *QueryRequest) (*Service, error) {
+func (*UnimplementedRegistryServer) QueryService(context.Context, *ServiceRequest) (*ServiceWorkloads, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryService not implemented")
 }
-func (*UnimplementedRegistryServer) RemoveService(context.Context, *ServiceRequest) (*Empty, error) {
+func (*UnimplementedRegistryServer) RemoveService(context.Context, *ServiceWorkload) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveService not implemented")
 }
 
@@ -531,7 +651,7 @@ func RegisterRegistryServer(s *grpc.Server, srv RegistryServer) {
 }
 
 func _Registry_RegisterService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ServiceRequest)
+	in := new(ServiceWorkload)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -543,13 +663,13 @@ func _Registry_RegisterService_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: "/svreg.Registry/RegisterService",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegistryServer).RegisterService(ctx, req.(*ServiceRequest))
+		return srv.(RegistryServer).RegisterService(ctx, req.(*ServiceWorkload))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Registry_QueryService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryRequest)
+	in := new(ServiceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -561,13 +681,13 @@ func _Registry_QueryService_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: "/svreg.Registry/QueryService",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegistryServer).QueryService(ctx, req.(*QueryRequest))
+		return srv.(RegistryServer).QueryService(ctx, req.(*ServiceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Registry_RemoveService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ServiceRequest)
+	in := new(ServiceWorkload)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -579,7 +699,7 @@ func _Registry_RemoveService_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: "/svreg.Registry/RemoveService",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegistryServer).RemoveService(ctx, req.(*ServiceRequest))
+		return srv.(RegistryServer).RemoveService(ctx, req.(*ServiceWorkload))
 	}
 	return interceptor(ctx, in, info, handler)
 }

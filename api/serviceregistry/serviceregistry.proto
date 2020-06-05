@@ -6,33 +6,43 @@ option go_package = "serviceregistry";
 
 
 service Registry{
-  rpc RegisterService (ServiceRequest) returns (Service) {} // Request register of a new service
-  rpc QueryService (QueryRequest) returns (Service) {} // Request a list of all the available services
-  rpc RemoveService (ServiceRequest) returns (Empty) {} // Remove service from list
+  rpc RegisterWorkload (ServiceWorkload) returns (Empty) {} // Request register of a new service
+  rpc QueryService (ServiceRequest) returns (ServiceWorkloads) {} // Request a services
+  rpc RemoveWorkload (ServiceWorkload) returns (Empty) {} // Remove service from list
 }
 
 message Empty {}
 
-message ServiceRequest{
-  //cd identifier
-  Service service = 1; //service workload registration { service name, Workload}
-}
-message Service {
-  string name = 1;
-  repeated Workload workloads = 2;
-  repeated int32 ports = 3;
-  string connectivityDomain = 4;
-}
-
-message Workload {
-  string identifier = 1; //
-  repeated string endpointIPAddress = 2;
-}
-
-message QueryRequest {
+//The request used to register a new service or update the existing ones
+message ServiceWorkload {
   string serviceName = 1;
+  string connectivityDomain = 2;
+  Workload workload = 3;
+  repeated int32 ports = 4;
 }
 
-//cluster/nse/workload
-//cluster, pod, ?nse?
+//Basic workload
+message Workload {
+  WorkloadIdentifier identifier = 1;
+  repeated string IPAddress = 2;
+  string connectivityDomain = 3;
+}
 
+//Request used to querry
+message ServiceRequest {
+  string name = 1;
+  string connectivityDomain = 2;
+}
+
+message ServiceWorkloads {
+  string serviceName = 1;
+  string connectivityDomain = 2;
+  repeated Workload workloads = 3;
+  repeated int32 ports = 4;
+}
+
+message WorkloadIdentifier {
+  string cluster = 1;
+  string podName = 2;
+  string workloadName = 3;
+}
