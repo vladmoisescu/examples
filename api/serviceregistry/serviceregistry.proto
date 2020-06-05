@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+
+package svreg;
+option go_package = "serviceregistry";
+
+
+service Registry{
+  rpc RegisterWorkload (ServiceWorkload) returns (Empty) {} // Request register of a new service
+  rpc QueryService (ServiceRequest) returns (ServiceWorkloads) {} // Request a services
+  rpc RemoveWorkload (ServiceWorkload) returns (Empty) {} // Remove service from list
+}
+
+message Empty {}
+
+//The request used to register a new service or update the existing ones
+message ServiceWorkload {
+  string serviceName = 1;
+  string connectivityDomain = 2;
+  Workload workload = 3;
+  repeated int32 ports = 4;
+}
+
+//Basic workload
+message Workload {
+  WorkloadIdentifier identifier = 1;
+  repeated string IPAddress = 2;
+  string connectivityDomain = 3;
+}
+
+//Request used to querry
+message ServiceRequest {
+  string name = 1;
+  string connectivityDomain = 2;
+}
+
+message ServiceWorkloads {
+  string serviceName = 1;
+  string connectivityDomain = 2;
+  repeated Workload workloads = 3;
+  repeated int32 ports = 4;
+}
+
+message WorkloadIdentifier {
+  string cluster = 1;
+  string podName = 2;
+  string workloadName = 3;
+}
