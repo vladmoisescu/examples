@@ -44,3 +44,4 @@ func (m *RangeIdentifier) Validate() error {
 	}
 	return nil
 }
+

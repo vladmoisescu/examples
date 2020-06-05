@@ -1,10 +1,10 @@
-module github.com/networkservicemesh/examples
+module github.com/tiswanso/examples
 
 go 1.12
 
 require (
 	github.com/Nordix/simple-ipam v1.0.0
-	github.com/adodon2go/examples v0.1.4-adodon2go // indirect
+	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/danielvladco/k8s-vnet v0.3.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/fsnotify/fsnotify v1.4.7
@@ -17,6 +17,10 @@ require (
 	github.com/networkservicemesh/networkservicemesh/sdk v0.3.0
 	github.com/onsi/gomega v1.10.0 // indirect
 	github.com/opentracing/opentracing-go v1.1.0
+	github.com/pkg/errors v0.9.1
+	github.com/sirupsen/logrus v1.4.2
+	github.com/spf13/viper v1.5.0
+	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.5.0
 	github.com/spf13/viper v1.6.1

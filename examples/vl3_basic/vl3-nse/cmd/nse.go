@@ -18,15 +18,18 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
+	"github.com/tiswanso/examples/examples/universal-cnf/vppagent/pkg/ucnf"
 	"github.com/danielvladco/k8s-vnet/pkg/nseconfig"
-	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/ucnf"
-	"github.com/networkservicemesh/examples/examples/universal-cnf/vppagent/pkg/vppagent"
+	"github.com/tiswanso/examples/examples/universal-cnf/vppagent/pkg/vppagent"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/api/networkservice"
 	"github.com/networkservicemesh/networkservicemesh/pkg/tools"
 	"github.com/networkservicemesh/networkservicemesh/sdk/common"
 	"github.com/networkservicemesh/networkservicemesh/sdk/endpoint"
 	"github.com/sirupsen/logrus"
+	"net"
 	"os"
+	"strconv"
 	"strings"
 )
 

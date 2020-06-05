@@ -20,7 +20,7 @@ import (
 
 	math "math"
 
-	ippool "github.com/adodon2go/examples/api/ipam/ipprovider"
+	ippool "github.com/tiswanso/examples/api/ipam/ipprovider"
 
 	context "golang.org/x/net/context"
 
