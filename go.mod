@@ -18,10 +18,6 @@ require (
 	github.com/onsi/gomega v1.10.0 // indirect
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/pkg/errors v0.9.1
-	github.com/sirupsen/logrus v1.4.2
-	github.com/spf13/viper v1.5.0
-	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa
-	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.5.0
 	github.com/spf13/viper v1.6.1
 	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa

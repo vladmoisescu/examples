@@ -4,19 +4,19 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/danielvladco/k8s-vnet/pkg/nseconfig"
 	"github.com/davecgh/go-spew/spew"
-	"github.com/tiswanso/examples/examples/universal-cnf/vppagent/pkg/config"
 	"github.com/gofrs/uuid"
-	"github.com/tiswanso/examples/api/ipam/ipprovider"
-	"github.com/tiswanso/examples/examples/universal-cnf/vppagent/pkg/config"
 	"github.com/networkservicemesh/networkservicemesh/sdk/common"
 	"github.com/sirupsen/logrus"
+	"github.com/tiswanso/examples/api/ipam/ipprovider"
+	"github.com/tiswanso/examples/examples/universal-cnf/vppagent/pkg/config"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"gopkg.in/yaml.v2"
-	"os"
-	"time"
 )
 
 type ipamService struct {
