@@ -13,8 +13,6 @@ service Registry{
 
 message Empty {}
 
-//Basic workload
-
 //Request used to query
 message ServiceRequest {
   string name = 1;
