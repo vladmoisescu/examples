@@ -27,6 +27,7 @@ message ServiceWorkload {
   repeated int32 ports = 4;
 }
 
+//Basic workload
 message Workload {
   WorkloadIdentifier identifier = 1;
   repeated string IPAddress = 2;
