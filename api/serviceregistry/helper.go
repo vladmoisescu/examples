@@ -44,7 +44,7 @@ func (x *ServiceWorkload) Validate() error {
 		}
 	}
 	var w Workload
-	for w = range x.Workloads {
+	for _, w = range x.Workloads {
 		errs = append(errs, w.Validate())
 	}
 	if len(errs) != 0 {
