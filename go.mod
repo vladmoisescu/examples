@@ -1,4 +1,4 @@
-module github.com/istratem/examples
+module github.com/tiswanso/examples
 
 go 1.12
 
