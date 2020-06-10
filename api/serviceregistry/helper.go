@@ -43,7 +43,7 @@ func (x *ServiceWorkload) Validate() error {
 			errs = append(errs, fmt.Errorf("port \"%d\" is invalid - allowed port range: 1-65535", p))
 		}
 	}
-	var w Workload
+	var w *Workload
 	for _, w = range x.Workloads {
 		errs = append(errs, w.Validate())
 	}
