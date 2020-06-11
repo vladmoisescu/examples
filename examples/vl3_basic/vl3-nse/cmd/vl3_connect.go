@@ -4,12 +4,13 @@ import (
 	"context"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/ligato/vpp-agent/api/models/vpp"
-	"github.com/tiswanso/examples/examples/universal-cnf/vppagent/pkg/config"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/api/connection"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/api/connection/mechanisms/memif"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/api/connectioncontext"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/api/networkservice"
 	"github.com/networkservicemesh/networkservicemesh/sdk/client"
+	"github.com/tiswanso/examples/examples/universal-cnf/vppagent/pkg/config"
+	"strconv"
 	"sync"
 	//remote_connection "github.com/networkservicemesh/networkservicemesh/controlplane/pkg/apis/remote/connection"
 	//remote_networkservice "github.com/networkservicemesh/networkservicemesh/controlplane/pkg/apis/remote/networkservice"
@@ -66,6 +67,8 @@ type vL3ConnectComposite struct {
 	ipamEndpoint  *endpoint.IpamEndpoint
 	backend       config.UniversalCNFBackend
 	myNseNameFunc fnGetNseName
+	connDomain string
+	ipamAddr string
 }
 
 func (peer *vL3NsePeer) setPeerState(state vL3PeerState) {
@@ -211,8 +214,41 @@ func (vxc *vL3ConnectComposite) Request(ctx context.Context,
 					go vxc.processNsEndpoints(context.TODO(), response, remoteIp)
 				}
 			}
+
+			serviceRegistry, err := NewServiceRegistry(vxc.ipamAddr)
+			if err != nil {
+				logrus.Error(err)
+			} else {
+				workloads := make([]string, 1)
+				workloads[0] = request.GetConnection().Context.IpContext.SrcIpAddr
+
+				ports := make([]int32, 1)
+				port, _ := strconv.Atoi(request.GetConnection().Labels["port"])
+				ports[0] = int32(port)
+
+				err = serviceRegistry.RegisterWorkload("cluster", request.GetConnection().Labels["podName"],
+														"name", request.GetConnection().Labels["service"],
+														vxc.connDomain, workloads, ports)
+				if err != nil {
+					logrus.Error(err)
+				}
+			}
+
+			logrus.Infof("vlad: %v", request.Connection.Labels)
+			logrus.Infof("vlad %v", request.GetConnection().Mechanism.Parameters)
+			logrus.Infof("vlad: %v", request.GetRequestConnection().Context.ExtraContext)
+			logrus.Infof("vlad: %v", request.GetConnection().Context.DnsContext.GetConfigs())
+			logrus.Infof("vlad: %v", request.GetConnection().GetDestinationNetworkServiceManagerName())
+			logrus.Infof("vlad: %v", request.GetConnection())
+
+			logrus.Infof("vlad as: %v", request.GetConnection().Labels["podName"])
+			logrus.Infof("vlad as: %v", request.GetConnection().Labels["service"])
+			logrus.Infof("vlad as: %v", request.GetConnection().Labels["port"])
+
 		}
 	}
+
+
 	logger.Infof("vL3ConnectComposite request done")
 	//return incoming, nil
 	if endpoint.Next(ctx) != nil {
@@ -391,7 +427,7 @@ func removeDuplicates(elements []string) []string {
 }
 
 // NewVppAgentComposite creates a new VPP Agent composite
-func newVL3ConnectComposite(configuration *common.NSConfiguration, ipamCidr string, backend config.UniversalCNFBackend, remoteIpList []string, getNseName fnGetNseName, defaultCdPrefix string) *vL3ConnectComposite {
+func newVL3ConnectComposite(configuration *common.NSConfiguration, ipamCidr string, backend config.UniversalCNFBackend, remoteIpList []string, getNseName fnGetNseName, defaultCdPrefix, ipamAddr, connDomain string) *vL3ConnectComposite {
 	nsRegAddr, ok := os.LookupEnv("NSREGISTRY_ADDR")
 	if !ok {
 		nsRegAddr = NSREGISTRY_ADDR
@@ -492,6 +528,8 @@ func newVL3ConnectComposite(configuration *common.NSConfiguration, ipamCidr stri
 		backend:           backend,
 		myNseNameFunc:     getNseName,
 		defaultCDPrefix:   defaultCdPrefix,
+		ipamAddr: 		   ipamAddr,
+		connDomain: 	   connDomain,
 	}
 
 	logrus.Infof("newVL3ConnectComposite returning")
