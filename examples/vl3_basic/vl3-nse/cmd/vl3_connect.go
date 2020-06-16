@@ -38,6 +38,13 @@ const (
 	PEER_STATE_CONN_RX
 )
 
+const (
+	POD_NAME = "podName"
+	SERVICE_NAME = "service"
+	PORT = "port"
+	CLUSTER_NAME = "clusterName"
+)
+
 type vL3NsePeer struct {
 	sync.RWMutex
 	endpointName              string
@@ -64,6 +71,8 @@ type vL3ConnectComposite struct {
 	ipamEndpoint  *endpoint.IpamEndpoint
 	backend       config.UniversalCNFBackend
 	myNseNameFunc fnGetNseName
+	connDomain string
+	ipamAddr string
 }
 
 func (peer *vL3NsePeer) setPeerState(state vL3PeerState) {
@@ -211,6 +220,24 @@ func (vxc *vL3ConnectComposite) Request(ctx context.Context,
 			}
 		}
 	}
+
+	serviceRegistry, err := NewServiceRegistry(vxc.ipamAddr)
+	if err != nil {
+		logrus.Error(err)
+	} else {
+		ports, err := processPortsFromLabel(request.GetConnection().Labels[PORT], ";")
+		if err != nil {
+			logger.Error(err)
+		}
+
+		err = serviceRegistry.RegisterWorkload(request.GetConnection().Labels[CLUSTER_NAME], request.GetConnection().Labels[POD_NAME],
+			request.GetConnection().Labels[SERVICE_NAME], request.GetConnection().Labels[SERVICE_NAME], vxc.connDomain,
+			processWorkloadIps(request.GetConnection().Context.IpContext.SrcIpAddr, ";"), ports)
+		if err != nil {
+			logrus.Error(err)
+		}
+	}
+
 	logger.Infof("vL3ConnectComposite request done")
 	//return incoming, nil
 	if endpoint.Next(ctx) != nil {
@@ -389,7 +416,7 @@ func removeDuplicates(elements []string) []string {
 }
 
 // NewVppAgentComposite creates a new VPP Agent composite
-func newVL3ConnectComposite(configuration *common.NSConfiguration, ipamCidr string, backend config.UniversalCNFBackend, remoteIpList []string, getNseName fnGetNseName) *vL3ConnectComposite {
+func newVL3ConnectComposite(configuration *common.NSConfiguration, ipamCidr string, backend config.UniversalCNFBackend, remoteIpList []string, getNseName fnGetNseName, ipamAddr, connDomain string) *vL3ConnectComposite {
 	nsRegAddr, ok := os.LookupEnv("NSREGISTRY_ADDR")
 	if !ok {
 		nsRegAddr = NSREGISTRY_ADDR
@@ -489,6 +516,8 @@ func newVL3ConnectComposite(configuration *common.NSConfiguration, ipamCidr stri
 		nsmClient:         nsmClient,
 		backend:           backend,
 		myNseNameFunc:     getNseName,
+		ipamAddr: 		   ipamAddr,
+		connDomain: 	   connDomain,
 	}
 
 	logrus.Infof("newVL3ConnectComposite returning")
