@@ -18,10 +18,7 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
-	"github.com/tiswanso/examples/examples/universal-cnf/vppagent/pkg/ucnf"
 	"github.com/danielvladco/k8s-vnet/pkg/nseconfig"
-	"github.com/tiswanso/examples/examples/universal-cnf/vppagent/pkg/vppagent"
 	"github.com/networkservicemesh/networkservicemesh/controlplane/api/networkservice"
 	"github.com/networkservicemesh/networkservicemesh/pkg/tools"
 	"github.com/networkservicemesh/networkservicemesh/sdk/common"
@@ -30,7 +27,6 @@ import (
 	"github.com/tiswanso/examples/examples/universal-cnf/vppagent/pkg/ucnf"
 	"github.com/tiswanso/examples/examples/universal-cnf/vppagent/pkg/vppagent"
 	"os"
-	"strconv"
 	"strings"
 )
 
@@ -77,7 +73,7 @@ func (e vL3CompositeEndpoint) AddCompositeEndpoints(nsConfig *common.NSConfigura
 		newVL3ConnectComposite(nsConfig, nsConfig.IPAddress,
 			&vppagent.UniversalCNFVPPAgentBackend{}, nsRemoteIpList, func() string {
 				return ucnfEndpoint.NseName
-			}, ucnfEndpoint.VL3.IPAM.DefaultPrefixPool),
+			}, ucnfEndpoint.VL3.IPAM.DefaultPrefixPool, ucnfEndpoint.VL3.IPAM.ServerAddress, ucnfEndpoint.CNNS.ConnectivityDomain) ,
 	}
 
 	return &compositeEndpoints
